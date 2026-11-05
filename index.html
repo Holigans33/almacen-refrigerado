@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#163a5c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Almacén refrigerado — Parte 4 v6 limpia v3</title>
+<style>
+/* ── Reset y base ─────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #e8edf2;
+  color: #1c2733;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+header {
+  background: linear-gradient(135deg, #163a5c 0%, #1e4f7a 100%);
+  color: #ffffff;
+  padding: 16px 14px 14px 14px;
+  box-shadow: 0 2px 8px rgba(22,58,92,.35);
+  position: relative;
+  overflow: hidden;
+}
+header::before {
+  content: '';
+  position: absolute;
+  right: -30px; top: -30px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,.05);
+  border-radius: 50%;
+}
+header::after {
+  content: '❄️';
+  position: absolute;
+  right: 16px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 36px;
+  opacity: .7;
+}
+header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
+header p { margin: 4px 0 0 0; font-size: 13px; color: #b8d4ea; }
+
+/* ── Layout ───────────────────────────────────────────────────── */
+main { width: 100%; max-width: 720px; margin: 0 auto; padding: 10px 10px 32px 10px; }
+
+/* ── Pestañas ─────────────────────────────────────────────────── */
+.pestanas {
+  display: flex; gap: 6px; margin: 0 0 10px 0;
+  position: sticky; top: 0;
+  background: #e8edf2;
+  padding: 8px 0 6px 0;
+  z-index: 5;
+  border-bottom: 1px solid #d0dae3;
+}
+.pestanas button {
+  flex: 1; min-height: 44px;
+  border: 1.5px solid #163a5c;
+  background: #ffffff;
+  color: #163a5c;
+  border-radius: 10px;
+  font-size: 13.5px; font-weight: 700;
+  cursor: pointer;
+  padding: 6px 2px;
+  transition: background .15s, color .15s, box-shadow .15s;
+  box-shadow: 0 1px 3px rgba(22,58,92,.08);
+}
+.pestanas button:hover { background: #dce8f4; }
+.pestanas button.activa {
+  background: #163a5c;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(22,58,92,.3);
+}
+
+/* ── Visibilidad ──────────────────────────────────────────────── */
+.seccion { display: none; }
+.seccion.visible { display: block; }
+.oculto { display: none; }
+
+/* ── Tarjeta ──────────────────────────────────────────────────── */
+.tarjeta {
+  background: #ffffff;
+  border: 1px solid #d2dce5;
+  border-radius: 14px;
+  padding: 14px 12px;
+  margin: 0 0 10px 0;
+  box-shadow: 0 1px 4px rgba(22,58,92,.07);
+}
+.tarjeta h2 { margin: 0 0 10px 0; font-size: 18px; font-weight: 700; color: #163a5c; letter-spacing: -.2px; }
+.tarjeta h3 { margin: 0 0 3px 0; font-size: 16px; font-weight: 700; color: #1c2733; }
+
+/* ── Formularios ──────────────────────────────────────────────── */
+label { display: block; font-weight: 600; margin: 10px 0 4px 0; font-size: 13.5px; color: #2a3d50; }
+input, select, textarea {
+  width: 100%; min-height: 46px; font-size: 16px;
+  padding: 9px 12px;
+  border: 1.5px solid #a8b8c6;
+  border-radius: 10px;
+  background: #f7fafc;
+  color: #1c2733;
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #163a5c;
+  box-shadow: 0 0 0 3px rgba(22,58,92,.13);
+  background: #ffffff;
+}
+textarea { min-height: 72px; resize: vertical; }
+button { cursor: pointer; }
+
+/* ── Botones ──────────────────────────────────────────────────── */
+.boton {
+  display: block; width: 100%; min-height: 50px;
+  border: none; border-radius: 12px;
+  background: linear-gradient(135deg, #163a5c, #1e4f7a);
+  color: #ffffff; font-size: 16px; font-weight: 700;
+  padding: 12px; margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(22,58,92,.25);
+  transition: opacity .15s, box-shadow .15s;
+  letter-spacing: .1px;
+}
+.boton:active { opacity: .85; }
+.boton.secundario {
+  background: #ffffff; color: #163a5c;
+  border: 1.5px solid #163a5c;
+  box-shadow: 0 1px 3px rgba(22,58,92,.1);
+}
+.boton.peligro-suave {
+  background: #ffffff; color: #7a1f1f;
+  border: 1.5px solid #7a1f1f;
+  box-shadow: none;
+}
+
+/* ── Selector de tipo de movimiento ───────────────────────────── */
+.tipos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.tipos button {
+  flex: 1 1 44%; min-height: 50px;
+  border: 1.5px solid #163a5c;
+  background: #f0f5fa; color: #163a5c;
+  border-radius: 12px; font-size: 15px; font-weight: 700;
+  padding: 8px;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.tipos button:hover { background: #dce8f4; }
+.tipos button.activo {
+  background: linear-gradient(135deg, #163a5c, #1e4f7a);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(22,58,92,.3);
+}
+
+/* ── Tarjeta de producto ──────────────────────────────────────── */
+.producto {
+  background: #ffffff;
+  border: 1px solid #d2dce5;
+  border-radius: 14px;
+  padding: 12px 12px 10px 12px;
+  margin: 0 0 10px 0;
+  box-shadow: 0 1px 4px rgba(22,58,92,.07);
+  border-left: 5px solid #163a5c;
+}
+.stock { font-size: 24px; font-weight: 800; margin: 4px 0 2px 0; color: #163a5c; letter-spacing: -.5px; }
+.meta { color: #5a6a78; font-size: 13px; }
+
+/* ── Acciones dentro de producto / historial ──────────────────── */
+.acciones { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.acciones button {
+  flex: 1 1 28%; min-height: 44px;
+  border-radius: 10px; font-size: 13.5px; font-weight: 700;
+  padding: 6px 4px;
+  background: #f0f5fa; color: #163a5c;
+  border: 1.5px solid #163a5c;
+  transition: background .15s;
+}
+.acciones button:hover { background: #dce8f4; }
+.acciones button.principal {
+  background: linear-gradient(135deg, #163a5c, #1e4f7a);
+  color: #ffffff; border-color: transparent;
+  box-shadow: 0 1px 5px rgba(22,58,92,.2);
+}
+
+/* ── Movimientos en historial ────────────────────────────────── */
+.movimiento {
+  background: #ffffff;
+  border: 1px solid #d2dce5;
+  border-left: 5px solid #163a5c;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 0 0 10px 0;
+  box-shadow: 0 1px 4px rgba(22,58,92,.06);
+}
+.movimiento .folio { font-weight: 700; font-size: 15px; }
+.movimiento .detalle { margin-top: 3px; font-size: 14px; }
+
+/* ── Etiquetas de tipo ────────────────────────────────────────── */
+.etiqueta {
+  display: inline-block;
+  background: #dce8f4; color: #163a5c;
+  border-radius: 20px; padding: 3px 11px;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .2px;
+}
+/* colores por tipo en borde del movimiento */
+.movimiento[data-tipo="Venta"]        { border-left-color: #2e7d32; }
+.movimiento[data-tipo="Salida"]       { border-left-color: #b3261e; }
+.movimiento[data-tipo="Transferencia"]{ border-left-color: #7a5a00; }
+
+/* ── Mensajes ────────────────────────────────────────────────── */
+.mensaje {
+  border-radius: 10px; padding: 11px 12px;
+  margin: 10px 0; font-size: 14px; display: none;
+  font-weight: 600; line-height: 1.4;
+}
+.mensaje.error {
+  display: block;
+  background: #fdf0ef; border: 1.5px solid #c0392b;
+  color: #7a1f1f;
+}
+.mensaje.ok {
+  display: block;
+  background: #e9f6eb; border: 1.5px solid #2e7d32;
+  color: #1b4d22;
+}
+
+/* ── Ayuda ───────────────────────────────────────────────────── */
+.ayuda { color: #5a6a78; font-size: 13px; margin-top: 4px; line-height: 1.4; }
+.sugerencias { margin-top: 6px; }
+.sugerencias button { display: block; width: 100%; min-height: 46px; text-align: left; background: #f0f5fa; color: #1c2733; border: 1px solid #b8d0e8; border-radius: 10px; padding: 8px 10px; margin: 0 0 4px 0; font-size: 15px; cursor: pointer; }
+.sugerencias button .meta { display: block; font-size: 13px; }
+
+/* ── Resumen / gráfico ────────────────────────────────────────── */
+.resumen {
+  display: block; background: #ffffff;
+  border: 1px solid #d2dce5; border-radius: 14px;
+  padding: 12px; margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(22,58,92,.07);
+}
+.fila-grafico { margin-bottom: 10px; }
+.grafico-etiqueta { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 4px; font-weight: 600; }
+.barra-fondo { width: 100%; height: 10px; background: #dbe6ef; border-radius: 6px; overflow: hidden; }
+.barra { height: 10px; background: linear-gradient(90deg,#163a5c,#2563a8); border-radius: 6px; transition: width .4s ease; }
+.barra.venta        { background: linear-gradient(90deg,#2e7d32,#43a047); }
+.barra.salida       { background: linear-gradient(90deg,#b3261e,#e53935); }
+.barra.transferencia{ background: linear-gradient(90deg,#7a5a00,#c08c00); }
+
+/* ── Estado vacío ────────────────────────────────────────────── */
+.vacio {
+  background: #f7fafc;
+  border: 1.5px dashed #a8b8c6;
+  border-radius: 12px;
+  padding: 20px 14px;
+  color: #5a6a78;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* ── Fotos ───────────────────────────────────────────────────── */
+.foto-vista  { width: 100%; height: auto; border: 1px solid #d2dce5; border-radius: 10px; margin-top: 10px; }
+.foto-grande { width: 100%; height: auto; border: 1px solid #d2dce5; border-radius: 10px; margin-top: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+
+/* ── Vista previa del movimiento (folio/stock) ───────────────── */
+.preview-movimiento {
+  background: #f0f6fb !important;
+  border: 1.5px solid #b8d0e8 !important;
+  border-radius: 12px !important;
+}
+
+/* ── Etiquetas de tipo con color ─────────────────────────────── */
+.etiqueta-Entrada      { background: #dce8f4; color: #163a5c; }
+.etiqueta-Venta        { background: #e6f4ea; color: #1b4d22; }
+.etiqueta-Salida       { background: #fdf0ef; color: #7a1f1f; }
+.etiqueta-Transferencia{ background: #fff8e1; color: #7a5a00; }
+
+/* ── Título de tarjeta con subtítulo ─────────────────────────── */
+.tarjeta h2 small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: #5a6a78;
+  margin-top: 2px;
+}
+
+/* ── Separador suave entre secciones ─────────────────────────── */
+.seccion-separador {
+  height: 1px; background: #d2dce5;
+  margin: 6px 0 12px 0; border: none;
+}
+
+/* ── Scrollbar sutil en texareas ──────────────────────────────── */
+textarea::-webkit-scrollbar { width: 5px; }
+textarea::-webkit-scrollbar-thumb { background: #b8c8d8; border-radius: 4px; }
+
+/* ── Botones deshabilitados ───────────────────────────────────── */
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* ── Transición suave al mostrar/ocultar secciones ──────────── */
+.seccion.visible { animation: fadeIn .18s ease; }
+@keyframes fadeIn { from { opacity: .5; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Extras visuales ─────────────────────────────────────────── */
+.stock-cero { color: #b3261e; }
+.insignia-agotado { display:inline-block; vertical-align:middle; margin-left:6px; background:#fdf0ef; color:#7a1f1f; border:1px solid #c0392b; border-radius:20px; padding:2px 9px; font-size:12px; font-weight:700; letter-spacing:0; }
+.pestanas button:focus-visible, .boton:focus-visible, .acciones button:focus-visible, .tipos button:focus-visible { outline: 3px solid #f2a900; outline-offset: 2px; }
+header { padding-top: max(16px, env(safe-area-inset-top)); }
+main { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
+input[type="file"] { padding: 10px 12px; background: #f0f5fa; border-style: dashed; }
+input[type="search"] { background-image: none; }
+@media (prefers-reduced-motion: reduce) { .seccion.visible { animation: none; } .barra { transition: none; } }
+</style>
+</head>
+<body>
+<header>
+<h1>Almacén refrigerado</h1>
+<p>📴 Sin conexión · Los datos quedan en este teléfono</p>
+</header>
+<main>
+<nav class="pestanas" aria-label="Secciones">
+<button type="button" id="tab-productos" class="activa" onclick="mostrarTab('productos')">📦 Productos</button>
+<button type="button" id="tab-movimiento" onclick="mostrarTab('movimiento')">🔄 Movimiento</button>
+<button type="button" id="tab-historial" onclick="mostrarTab('historial')">📜 Historial</button>
+<button type="button" id="tab-respaldo" onclick="mostrarTab('respaldo')">💾 Respaldo</button>
+</nav>
+
+<section id="seccion-productos" class="seccion visible" aria-label="Productos">
+<div class="tarjeta">
+<h2>Productos</h2>
+<label for="buscar-producto">Buscar producto</label>
+<input id="buscar-producto" type="search" placeholder="Nombre o código" oninput="renderProductos()">
+<button class="boton" type="button" onclick="abrirNuevoProducto()">Nuevo producto</button>
+</div>
+<div id="grafico-stock"></div>
+
+<div id="form-producto" class="tarjeta oculto">
+<h2 id="titulo-producto">Nuevo producto</h2>
+<form id="producto-form">
+<label for="p-nombre">Nombre del producto</label>
+<input id="p-nombre" type="text" required autocomplete="off">
+<label for="p-codigo">Código único del producto</label>
+<input id="p-codigo" type="text" required autocomplete="off">
+<label for="p-unidad">Unidad</label>
+<input id="p-unidad" type="text" list="unidades" required autocomplete="off" placeholder="Cajas, libras, kilogramos...">
+<datalist id="unidades"><option value="Cajas"></option><option value="Libras"></option><option value="Kilogramos"></option><option value="Unidades"></option></datalist>
+<div id="campo-stock-inicial">
+<label for="p-stock">Stock inicial</label>
+<input id="p-stock" type="number" min="0" step="any" value="0">
+</div>
+<div id="campo-inicial-extra">
+<label for="p-origen">Origen / de dónde viene el stock inicial</label>
+<input id="p-origen" type="text" autocomplete="off" placeholder="Escríbelo a mano">
+<label for="p-observaciones">Observaciones</label>
+<textarea id="p-observaciones"></textarea>
+<div id="campo-foto-inicial" class="oculto">
+<label for="p-foto">Foto de la factura del stock inicial</label>
+<input id="p-foto" type="file" accept="image/*">
+<img id="vista-p-foto" class="foto-vista oculto" alt="Vista previa de la foto de la factura">
+<div id="info-p-foto" class="ayuda"></div>
+<button class="boton secundario" type="button" onclick="quitarFotoInicial()">Quitar foto</button>
+</div>
+</div>
+<div id="mensaje-producto" class="mensaje" role="alert"></div>
+<button class="boton" type="submit">Guardar producto</button>
+<button class="boton secundario" type="button" onclick="cerrarFormProducto()">Cancelar</button>
+</form>
+</div>
+
+<div id="lista-productos"></div>
+</section>
+
+<section id="seccion-movimiento" class="seccion" aria-label="Nuevo movimiento">
+<div class="tarjeta">
+<h2>Nuevo movimiento</h2>
+<form id="movimiento-form">
+<label>Tipo de movimiento</label>
+<div class="tipos" role="group" aria-label="Tipo de movimiento">
+<button type="button" id="tipo-entrada" class="activo" onclick="elegirTipo('Entrada')">Entrada</button>
+<button type="button" id="tipo-venta" onclick="elegirTipo('Venta')">Venta</button>
+<button type="button" id="tipo-salida" onclick="elegirTipo('Salida')">Salida</button>
+<button type="button" id="tipo-transferencia" onclick="elegirTipo('Transferencia')">Transferencia</button>
+</div>
+<p class="ayuda" id="ayuda-tipo">Entrada: entra cantidad al almacén.</p>
+
+<label for="m-producto-texto">Producto</label>
+<input id="m-producto-texto" type="text" required autocomplete="off" placeholder="Escribe el nombre o el código..." oninput="alEscribirProducto()" onfocus="alEnfocarProducto()" onblur="alSalirProducto()">
+<input id="m-producto" type="hidden">
+<div id="sugerencias-producto" class="sugerencias"></div>
+
+<label for="m-cantidad">Cantidad</label>
+<input id="m-cantidad" type="number" min="0" step="any" required placeholder="Ejemplo: 4">
+<p class="ayuda" id="ayuda-unidad"></p>
+
+<label for="m-fecha">Fecha y hora</label>
+<input id="m-fecha" type="datetime-local" required>
+
+<div id="campo-origen">
+<label for="m-origen">Origen / de dónde</label>
+<input id="m-origen" type="text" autocomplete="off" placeholder="Escríbelo a mano">
+</div>
+
+<div id="campo-destino" class="oculto">
+<label for="m-destino">Destino / hacia dónde</label>
+<input id="m-destino" type="text" autocomplete="off" placeholder="Escríbelo a mano">
+</div>
+
+<div id="campo-foto">
+<label for="m-foto">Foto de la factura</label>
+<input id="m-foto" type="file" accept="image/*">
+<img id="vista-m-foto" class="foto-vista oculto" alt="Vista previa de la foto de la factura">
+<div id="info-m-foto" class="ayuda"></div>
+<button class="boton secundario" type="button" onclick="quitarFotoMovimiento()">Quitar foto</button>
+</div>
+
+<label for="m-observaciones">Observaciones</label>
+<textarea id="m-observaciones" placeholder="En salida, escribe el motivo: merma, traslado u otro."></textarea>
+
+<label for="m-entrega">Quién entrega</label>
+<input id="m-entrega" type="text" autocomplete="off">
+<label for="m-recibe">Quién recibe</label>
+<input id="m-recibe" type="text" autocomplete="off">
+
+<div class="tarjeta preview-movimiento" style="background:#eaf0f5; margin-top:10px;">
+<div id="vista-folio" style="font-size:13px; color:#163a5c; font-weight:700;">📋 Folio: se asigna al guardar.</div>
+<div id="vista-stock" style="font-size:15px; margin-top:4px; font-weight:600; color:#1c2733;">📦 Inicio: — &nbsp; Final: —</div>
+</div>
+
+<div id="mensaje-movimiento" class="mensaje" role="alert"></div>
+<button class="boton" type="submit">Guardar movimiento</button>
+<button class="boton secundario" type="button" onclick="limpiarMovimiento()">Limpiar</button>
+</form>
+</div>
+</section>
+
+<section id="seccion-historial" class="seccion" aria-label="Historial">
+<div class="tarjeta">
+<h2>Historial</h2>
+<div id="filtro-producto-activo"></div>
+<label for="buscar-historial">Buscar</label>
+<input id="buscar-historial" type="search" placeholder="Producto, folio, observaciones, entrega o recibe" oninput="renderHistorial()">
+<label for="filtro-tipo">Tipo</label>
+<select id="filtro-tipo" onchange="renderHistorial()">
+<option value="">Todos</option>
+<option value="Entrada">Entrada</option>
+<option value="Venta">Venta</option>
+<option value="Salida">Salida</option>
+<option value="Transferencia">Transferencia</option>
+</select>
+<label for="filtro-fecha">Fecha</label>
+<input id="filtro-fecha" type="date" onchange="renderHistorial()">
+<button class="boton secundario" type="button" onclick="limpiarFiltros()">Limpiar filtros</button>
+</div>
+<div class="resumen" id="resumen-historial"></div>
+<div id="mensaje-ticket" class="mensaje" role="status"></div>
+<div id="lista-historial"></div>
+</section>
+
+<section id="seccion-respaldo" class="seccion" aria-label="Respaldo">
+<div class="tarjeta">
+<h2>Respaldo completo</h2>
+<div id="info-respaldo" class="meta"></div>
+<div id="mensaje-respaldo" class="mensaje" role="alert"></div>
+<button class="boton" type="button" onclick="exportarRespaldo()">Exportar respaldo</button>
+<label for="archivo-respaldo" style="display:block; font-weight:bold; margin:8px 0 3px 0;">Archivo de respaldo para importar</label>
+<input id="archivo-respaldo" type="file" accept=".json,application/json">
+<p class="ayuda">Importar reemplaza todo. Exporta primero si quieres conservarlo.</p>
+<button class="boton secundario" type="button" onclick="importarRespaldo()">Importar respaldo</button>
+</div>
+
+<div class="tarjeta">
+<h2>Resumen para revisión</h2>
+<label for="resumen-desde">Desde</label>
+<input id="resumen-desde" type="date">
+<label for="resumen-hasta">Hasta</label>
+<input id="resumen-hasta" type="date">
+<button class="boton" type="button" onclick="generarResumenUI()">Generar resumen</button>
+<label for="resumen-texto">Resumen</label>
+<textarea id="resumen-texto" readonly style="min-height:220px;"></textarea>
+<div id="mensaje-resumen" class="mensaje" role="status"></div>
+<button class="boton secundario" type="button" onclick="descargarResumen()">Descargar resumen</button>
+<button class="boton" type="button" onclick="descargarResumenPDF()">Descargar resumen en PDF</button>
+<button class="boton secundario" type="button" onclick="compartirResumen()">Compartir resumen</button>
+<button class="boton secundario" type="button" onclick="compartirResumenPDF()">Compartir resumen en PDF</button>
+<button class="boton secundario" type="button" onclick="copiarResumen()">Copiar resumen</button>
+</div>
+</section>
+</main>
+<script>
+'use strict';
+function calcularStock(producto, movimientos) {
+  var total = Number(producto.stockInicial) || 0;
+  for (var i = 0; i < movimientos.length; i++) {
+    var m = movimientos[i];
+    if (m.productoId !== producto.id) { continue; }
+    if (m.esInicial) { continue; }
+    if (m.tipo === 'Entrada') { total += Number(m.cantidad) || 0; }
+    if (m.tipo === 'Venta' || m.tipo === 'Salida' || m.tipo === 'Transferencia') { total -= Number(m.cantidad) || 0; }
+  }
+  return total;
+}
+function siguienteFolio(movimientos) {
+  var max = 0;
+  for (var i = 0; i < movimientos.length; i++) {
+    if (Number(movimientos[i].folioNum) > max) { max = Number(movimientos[i].folioNum); }
+  }
+  return max + 1;
+}
+function formatearFolio(n) {
+  var s = String(n);
+  while (s.length < 4) { s = '0' + s; }
+  return s;
+}
+function formatearCantidad(n) {
+  var v = Number(n);
+  if (!isFinite(v)) { return '0'; }
+  var s = v.toFixed(3);
+  s = s.replace(/0+$/, '').replace(/\.$/, '');
+  return s === '' || s === '-0' ? '0' : s;
+}
+function normalizarTexto(t) {
+  return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+function escaparHtml(t) {
+  return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function pdfEscapeTexto(s) {
+  var t = String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/\r/g, ' ').replace(/\n/g, ' ');
+  var out = '';
+  for (var i = 0; i < t.length; i++) { out += t.charCodeAt(i) > 255 ? '?' : t.charAt(i); }
+  return out;
+}
+function envolverTexto(texto, maximo) {
+  var max = maximo || 82;
+  var palabras = String(texto || '').split(/\s+/).filter(function (w) { return w.length; });
+  var lineas = [];
+  var actual = '';
+  for (var i = 0; i < palabras.length; i++) {
+    var prueba = actual ? actual + ' ' + palabras[i] : palabras[i];
+    if (prueba.length > max && actual) { lineas.push(actual); actual = palabras[i]; } else { actual = prueba; }
+  }
+  if (actual) { lineas.push(actual); }
+  return lineas.length ? lineas : [''];
+}
+function ajustarImagen(ancho, alto, maxAncho, maxAlto) {
+  if (!ancho || !alto || !maxAncho || !maxAlto) { return { ancho: 0, alto: 0 }; }
+  var escala = Math.min(maxAncho / ancho, maxAlto / alto, 1);
+  return { ancho: Math.round(ancho * escala), alto: Math.round(alto * escala) };
+}
+function nombreArchivoTicket(m) {
+  return 'ticket-' + normalizarTexto(m.tipo) + '-' + m.folio + '.pdf';
+}
+function bytesLatin1(s) {
+  var b = new Uint8Array(s.length);
+  for (var i = 0; i < s.length; i++) { b[i] = s.charCodeAt(i) & 255; }
+  return b;
+}
+function unirBytes(lista) {
+  var total = 0;
+  for (var i = 0; i < lista.length; i++) { total += lista[i].length; }
+  var out = new Uint8Array(total);
+  var pos = 0;
+  for (var j = 0; j < lista.length; j++) { out.set(lista[j], pos); pos += lista[j].length; }
+  return out;
+}
+function construirPDFBytes(m, foto) {
+  var contenido = '';
+  function linea(texto, y, tam, fuente) {
+    contenido += 'BT /' + fuente + ' ' + tam + ' Tf 1 0 0 1 48 ' + y + ' Tm (' + pdfEscapeTexto(texto) + ') Tj ET\n';
+  }
+  var y = 792;
+  linea('Almacén refrigerado', y, 20, 'F2'); y -= 30;
+  linea(m.tipo.toUpperCase() + ' - Folio ' + m.folio, y, 14, 'F2'); y -= 22;
+  linea('Fecha: ' + m.fechaTexto, y, 12, 'F1'); y -= 16;
+  contenido += '0.5 w 48 ' + y + ' m 547 ' + y + ' l S\n'; y -= 28;
+  linea('Producto: ' + m.nombre + ' (' + m.codigo + ')', y, 12, 'F1'); y -= 22;
+  linea('Cantidad: ' + formatearCantidad(m.cantidad) + ' ' + m.unidad, y, 12, 'F1'); y -= 22;
+  linea('Inicio: ' + formatearCantidad(m.antes) + ' ' + m.unidad + '   Final: ' + formatearCantidad(m.despues) + ' ' + m.unidad, y, 12, 'F1'); y -= 22;
+  if (m.origen) { linea('Origen: ' + m.origen, y, 12, 'F1'); y -= 22; }
+  if (m.destino) { linea('Destino: ' + m.destino, y, 12, 'F1'); y -= 22; }
+  if (m.observaciones) {
+    var partes = envolverTexto('Observaciones: ' + m.observaciones, 82);
+    for (var k = 0; k < partes.length; k++) { linea(partes[k], y, 12, 'F1'); y -= 22; }
+  }
+  if (m.entrega) { linea('Entrega: ' + m.entrega, y, 12, 'F1'); y -= 22; }
+  if (m.recibe) { linea('Recibe: ' + m.recibe, y, 12, 'F1'); y -= 22; }
+  if (m.esInicial) { linea('Stock inicial al crear el producto.', y, 12, 'F1'); y -= 22; }
+  if (!foto) {
+    if (m.tipo === 'Salida') { linea('Sin foto de factura.', y, 12, 'F1'); }
+    else { linea('Sin foto guardada.', y, 12, 'F1'); }
+    y -= 22;
+  } else {
+    linea('Foto de la factura:', y, 12, 'F2'); y -= 18;
+    var maxAlto = Math.max(60, y - 36);
+    var aj = ajustarImagen(foto.ancho, foto.alto, 499, maxAlto);
+    var imgX = Math.round(48 + (499 - aj.ancho) / 2);
+    var imgY = Math.round(y - aj.alto);
+    contenido += 'q ' + aj.ancho + ' 0 0 ' + aj.alto + ' ' + imgX + ' ' + imgY + ' cm /Im1 Do Q\n';
+  }
+  var contenidoBytes = bytesLatin1(contenido);
+  var tieneFoto = !!foto;
+  var numImagen = tieneFoto ? 7 : 0;
+  var recursos = '<< /Font << /F1 5 0 R /F2 6 0 R >>' + (tieneFoto ? ' /XObject << /Im1 7 0 R >>' : '') + ' >>';
+  var objetos = [];
+  objetos[1] = bytesLatin1('<< /Type /Catalog /Pages 2 0 R >>');
+  objetos[2] = bytesLatin1('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  objetos[3] = bytesLatin1('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources ' + recursos + ' /Contents 4 0 R >>');
+  objetos[4] = unirBytes([bytesLatin1('<< /Length ' + contenidoBytes.length + ' >>\nstream\n'), contenidoBytes, bytesLatin1('\nendstream')]);
+  objetos[5] = bytesLatin1('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+  objetos[6] = bytesLatin1('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  if (tieneFoto) {
+    objetos[7] = unirBytes([bytesLatin1('<< /Type /XObject /Subtype /Image /Width ' + foto.ancho + ' /Height ' + foto.alto + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + foto.bytes.length + ' >>\nstream\n'), foto.bytes, bytesLatin1('\nendstream')]);
+  }
+  var totalObjetos = tieneFoto ? 7 : 6;
+  var partes = [bytesLatin1('%PDF-1.4\n')];
+  var offsets = [0];
+  var pos = partes[0].length;
+  for (var n = 1; n <= totalObjetos; n++) {
+    offsets[n] = pos;
+    var cab = bytesLatin1(n + ' 0 obj\n');
+    var pie = bytesLatin1('\nendobj\n');
+    partes.push(cab); pos += cab.length;
+    partes.push(objetos[n]); pos += objetos[n].length;
+    partes.push(pie); pos += pie.length;
+  }
+  var xrefPos = pos;
+  var xref = 'xref\n0 ' + (totalObjetos + 1) + '\n0000000000 65535 f \n';
+  for (var q = 1; q <= totalObjetos; q++) {
+    var off = String(offsets[q]);
+    while (off.length < 10) { off = '0' + off; }
+    xref += off + ' 00000 n \n';
+  }
+  xref += 'trailer\n<< /Size ' + (totalObjetos + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF';
+  partes.push(bytesLatin1(xref));
+  return unirBytes(partes);
+}
+function fechaISO(iso) {
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) { return ''; }
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+function validarRespaldo(d) {
+  if (!d || typeof d !== 'object' || Array.isArray(d)) { return 'El archivo no es un respaldo válido.'; }
+  if (!Array.isArray(d.productos) || !Array.isArray(d.movimientos) || !Array.isArray(d.fotos)) { return 'El archivo no trae productos, movimientos y fotos.'; }
+  var codigos = {};
+  for (var i = 0; i < d.productos.length; i++) {
+    var p = d.productos[i];
+    if (!p || typeof p.id !== 'string' || !String(p.nombre || '').trim() || !String(p.codigo || '').trim() || !String(p.unidad || '').trim()) { return 'Un producto del respaldo está incompleto.'; }
+    if (!isFinite(Number(p.stockInicial)) || Number(p.stockInicial) < 0) { return 'Un producto del respaldo tiene un stock inicial inválido.'; }
+    var cn = normalizarTexto(p.codigo);
+    if (codigos[cn]) { return 'El respaldo trae un código de producto repetido.'; }
+    codigos[cn] = true;
+  }
+  var folios = {};
+  var tipos = { Entrada: true, Venta: true, Salida: true, Transferencia: true };
+  for (var j = 0; j < d.movimientos.length; j++) {
+    var m = d.movimientos[j];
+    if (!m || typeof m.id !== 'string' || !tipos[m.tipo] || !isFinite(Number(m.folioNum)) || Number(m.folioNum) <= 0) { return 'Un movimiento del respaldo está incompleto.'; }
+    if (!isFinite(Number(m.cantidad)) || Number(m.cantidad) <= 0) { return 'Un movimiento del respaldo tiene una cantidad inválida.'; }
+    if (folios[m.folioNum]) { return 'El respaldo trae un folio repetido.'; }
+    folios[m.folioNum] = true;
+  }
+  for (var k = 0; k < d.fotos.length; k++) {
+    var f = d.fotos[k];
+    if (!f || typeof f.movimientoId !== 'string' || typeof f.datos !== 'string' || f.datos.indexOf('data:image/') !== 0) { return 'Una foto del respaldo está incompleta.'; }
+  }
+  return null;
+}
+function generarResumenTexto(d) {
+  var productos = d.productos || [];
+  var movimientos = d.movimientos || [];
+  var fotoIds = d.fotoIds || {};
+  function tieneFoto(id) {
+    if (Array.isArray(fotoIds)) { return fotoIds.indexOf(id) !== -1; }
+    return !!fotoIds[id];
+  }
+  var lineas = [];
+  lineas.push('ALMACÉN REFRIGERADO - RESUMEN PARA REVISIÓN');
+  lineas.push('Generado: ' + (d.generadoEnTexto || ''));
+  lineas.push('Período: ' + (d.desde || 'inicio') + ' a ' + (d.hasta || 'fin'));
+  lineas.push('Sin fotos. Las fotos quedan guardadas en la app, ligadas a su folio.');
+  lineas.push('');
+  lineas.push('STOCK ACTUAL');
+  var ordenados = productos.slice().sort(function (a, b) { return normalizarTexto(a.nombre) < normalizarTexto(b.nombre) ? -1 : 1; });
+  if (!ordenados.length) { lineas.push('Sin productos.'); }
+  for (var i = 0; i < ordenados.length; i++) {
+    var p = ordenados[i];
+    var entradas = 0, ventas = 0, salidas = 0, transferencias = 0;
+    for (var j = 0; j < movimientos.length; j++) {
+      var mm = movimientos[j];
+      if (mm.productoId !== p.id) { continue; }
+      if (mm.tipo === 'Entrada' && !mm.esInicial) { entradas += Number(mm.cantidad) || 0; }
+      if (mm.tipo === 'Venta') { ventas += Number(mm.cantidad) || 0; }
+      if (mm.tipo === 'Salida') { salidas += Number(mm.cantidad) || 0; }
+      if (mm.tipo === 'Transferencia') { transferencias += Number(mm.cantidad) || 0; }
+    }
+    lineas.push(p.nombre + ' (' + p.codigo + ') - Stock: ' + formatearCantidad(calcularStock(p, movimientos)) + ' ' + p.unidad + ' | Stock inicial: ' + formatearCantidad(p.stockInicial) + ' ' + p.unidad + ' | Entradas: ' + formatearCantidad(entradas) + ' | Ventas: ' + formatearCantidad(ventas) + ' | Salidas: ' + formatearCantidad(salidas) + ' | Transferencias: ' + formatearCantidad(transferencias));
+  }
+  lineas.push('');
+  lineas.push('MOVIMIENTOS');
+  var filtrados = movimientos.filter(function (m) {
+    var f = fechaISO(m.fecha);
+    if (d.desde && f < d.desde) { return false; }
+    if (d.hasta && f > d.hasta) { return false; }
+    return true;
+  }).sort(function (a, b) { return a.folioNum - b.folioNum; });
+  if (!filtrados.length) { lineas.push('Sin movimientos en el período.'); }
+  for (var k = 0; k < filtrados.length; k++) {
+    var m2 = filtrados[k];
+    var partes = ['Folio ' + m2.folio, formatearFecha(m2.fecha), m2.tipo, m2.nombre + ' (' + m2.codigo + ')', formatearCantidad(m2.cantidad) + ' ' + m2.unidad, 'Inicio ' + formatearCantidad(m2.antes) + ' ' + m2.unidad + ' -> Final ' + formatearCantidad(m2.despues) + ' ' + m2.unidad];
+    if (m2.origen) { partes.push('Origen: ' + m2.origen); }
+    if (m2.destino) { partes.push('Destino: ' + m2.destino); }
+    if (m2.observaciones) { partes.push('Observaciones: ' + m2.observaciones); }
+    if (m2.entrega) { partes.push('Entrega: ' + m2.entrega); }
+    if (m2.recibe) { partes.push('Recibe: ' + m2.recibe); }
+    partes.push('Foto: ' + (tieneFoto(m2.id) ? 'Sí' : 'No'));
+    lineas.push(partes.join(' | '));
+  }
+  lineas.push('');
+  lineas.push('Total movimientos: ' + filtrados.length);
+  return lineas.join('\n');
+}
+function fechaCorta(iso) {
+  var f = formatearFecha(iso);
+  return f.split(' ')[0];
+}
+function datosResumenPDF(d) {
+  var productos = d.productos || [];
+  var movimientos = d.movimientos || [];
+  var filtrados = movimientos.filter(function (m) {
+    var f = fechaISO(m.fecha);
+    if (d.desde && f < d.desde) { return false; }
+    if (d.hasta && f > d.hasta) { return false; }
+    return true;
+  });
+  function fila(m) {
+    return { fecha: fechaCorta(m.fecha), folio: m.folio, producto: m.nombre + ' (' + m.codigo + ')', cantidad: formatearCantidad(m.cantidad) + ' ' + m.unidad, inicio: formatearCantidad(m.antes) + ' ' + m.unidad, final: formatearCantidad(m.despues) + ' ' + m.unidad, folioNum: m.folioNum, fechaISO: fechaISO(m.fecha) };
+  }
+  function ordenar(filas) {
+    return filas.sort(function (a, b) {
+      if (a.fechaISO !== b.fechaISO) { return a.fechaISO < b.fechaISO ? -1 : 1; }
+      return a.folioNum - b.folioNum;
+    });
+  }
+  var stock = productos.slice().sort(function (a, b) { return normalizarTexto(a.nombre) < normalizarTexto(b.nombre) ? -1 : 1; }).map(function (p) {
+    return { nombre: p.nombre, codigo: p.codigo, unidad: p.unidad, stock: formatearCantidad(calcularStock(p, movimientos)) + ' ' + p.unidad, inicial: formatearCantidad(p.stockInicial) + ' ' + p.unidad };
+  });
+  return {
+    generadoEnTexto: d.generadoEnTexto || '',
+    periodoTexto: (d.desde || 'inicio') + ' a ' + (d.hasta || 'fin'),
+    stock: stock,
+    secciones: [
+      { titulo: 'INICIO (STOCK INICIAL)', filas: ordenar(filtrados.filter(function (m) { return !!m.esInicial; }).map(fila)) },
+      { titulo: 'ENTRADAS', filas: ordenar(filtrados.filter(function (m) { return m.tipo === 'Entrada' && !m.esInicial; }).map(fila)) },
+      { titulo: 'SALIDAS', filas: ordenar(filtrados.filter(function (m) { return m.tipo === 'Salida'; }).map(fila)) },
+      { titulo: 'VENTAS', filas: ordenar(filtrados.filter(function (m) { return m.tipo === 'Venta'; }).map(fila)) },
+      { titulo: 'TRANSFERENCIAS', filas: ordenar(filtrados.filter(function (m) { return m.tipo === 'Transferencia'; }).map(fila)) }
+    ]
+  };
+}
+function recortarCelda(texto, maximo) {
+  var t = String(texto || '');
+  if (t.length <= maximo) { return t; }
+  return t.slice(0, Math.max(0, maximo - 3)) + '...';
+}
+function construirResumenPDFBytes(datos) {
+  var paginas = [];
+  var pagina = [];
+  var y = 0;
+  var COLUMNAS = [
+    { x: 40, titulo: 'Fecha' },
+    { x: 110, titulo: 'Folio' },
+    { x: 150, titulo: 'Producto' },
+    { x: 330, titulo: 'Cantidad' },
+    { x: 395, titulo: 'Inicio' },
+    { x: 475, titulo: 'Final' }
+  ];
+  function texto(x, yy, txt, tam, fuente) {
+    pagina.push('BT /' + fuente + ' ' + tam + ' Tf 1 0 0 1 ' + x + ' ' + yy + ' Tm (' + pdfEscapeTexto(txt) + ') Tj ET\n');
+  }
+  function lineaHorizontal(yy) {
+    pagina.push('0.5 w 40 ' + yy + ' m 555 ' + yy + ' l S\n');
+  }
+  function encabezadoPagina() {
+    y = 792;
+    texto(40, y, 'Almacén refrigerado', 16, 'F2'); y -= 20;
+    texto(40, y, 'Resumen para revisión', 12, 'F2'); y -= 16;
+    texto(40, y, 'Generado: ' + datos.generadoEnTexto + '   Período: ' + datos.periodoTexto, 10, 'F1'); y -= 8;
+    lineaHorizontal(y); y -= 20;
+  }
+  function nuevaPagina() {
+    if (pagina.length) { paginas.push(pagina.join('')); }
+    pagina = [];
+    encabezadoPagina();
+  }
+  function cabeceraTabla() {
+    for (var i = 0; i < COLUMNAS.length; i++) { texto(COLUMNAS[i].x, y, COLUMNAS[i].titulo, 9, 'F2'); }
+    y -= 6;
+    lineaHorizontal(y); y -= 14;
+  }
+  function asegurar(espacio) {
+    if (y - espacio < 48) { nuevaPagina(); return true; }
+    return false;
+  }
+  nuevaPagina();
+  texto(40, y, 'STOCK ACTUAL', 12, 'F2'); y -= 20;
+  texto(40, y, 'Producto', 9, 'F2');
+  texto(240, y, 'Código', 9, 'F2');
+  texto(320, y, 'Unidad', 9, 'F2');
+  texto(390, y, 'Stock', 9, 'F2');
+  texto(470, y, 'Stock inicial', 9, 'F2');
+  y -= 6; lineaHorizontal(y); y -= 14;
+  if (!datos.stock.length) { texto(40, y, 'Sin productos.', 10, 'F1'); y -= 16; }
+  for (var s = 0; s < datos.stock.length; s++) {
+    if (y < 64) { nuevaPagina(); texto(40, y, 'STOCK ACTUAL (continuación)', 12, 'F2'); y -= 20; texto(40, y, 'Producto', 9, 'F2'); texto(240, y, 'Código', 9, 'F2'); texto(320, y, 'Unidad', 9, 'F2'); texto(390, y, 'Stock', 9, 'F2'); texto(470, y, 'Stock inicial', 9, 'F2'); y -= 6; lineaHorizontal(y); y -= 14; }
+    var filaStock = datos.stock[s];
+    texto(40, y, recortarCelda(filaStock.nombre, 38), 9, 'F1');
+    texto(240, y, recortarCelda(filaStock.codigo, 14), 9, 'F1');
+    texto(320, y, recortarCelda(filaStock.unidad, 12), 9, 'F1');
+    texto(390, y, filaStock.stock, 9, 'F1');
+    texto(470, y, filaStock.inicial, 9, 'F1');
+    y -= 16;
+  }
+  y -= 10;
+  for (var sec = 0; sec < datos.secciones.length; sec++) {
+    var seccion = datos.secciones[sec];
+    asegurar(56);
+    texto(40, y, seccion.titulo, 12, 'F2'); y -= 20;
+    cabeceraTabla();
+    if (!seccion.filas.length) {
+      texto(40, y, 'Sin movimientos en el período.', 10, 'F1'); y -= 16;
+    }
+    for (var r = 0; r < seccion.filas.length; r++) {
+      if (y < 64) {
+        nuevaPagina();
+        texto(40, y, seccion.titulo + ' (continuación)', 12, 'F2'); y -= 20;
+        cabeceraTabla();
+      }
+      var fila = seccion.filas[r];
+      texto(40, y, fila.fecha, 9, 'F1');
+      texto(110, y, fila.folio, 9, 'F1');
+      texto(150, y, recortarCelda(fila.producto, 34), 9, 'F1');
+      texto(330, y, recortarCelda(fila.cantidad, 12), 9, 'F1');
+      texto(395, y, recortarCelda(fila.inicio, 14), 9, 'F1');
+      texto(475, y, recortarCelda(fila.final, 14), 9, 'F1');
+      y -= 16;
+    }
+    texto(40, y, 'Total: ' + seccion.filas.length + ' movimientos', 9, 'F2'); y -= 26;
+  }
+  paginas.push(pagina.join(''));
+  var totalPaginas = paginas.length;
+  for (var pg = 0; pg < totalPaginas; pg++) {
+    paginas[pg] += 'BT /F1 9 Tf 1 0 0 1 40 30 Tm (Página ' + (pg + 1) + ' de ' + totalPaginas + '   Sin fotos. El detalle y la foto están en el ticket de cada folio.) Tj ET\n';
+  }
+  var totalObjetos = 4 + 2 * totalPaginas;
+  var fuente1 = 3 + 2 * totalPaginas;
+  var fuente2 = 4 + 2 * totalPaginas;
+  var objetos = [];
+  var kids = [];
+  for (var i = 0; i < totalPaginas; i++) { kids.push((3 + 2 * i) + ' 0 R'); }
+  objetos[1] = bytesLatin1('<< /Type /Catalog /Pages 2 0 R >>');
+  objetos[2] = bytesLatin1('<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + totalPaginas + ' >>');
+  for (var j = 0; j < totalPaginas; j++) {
+    var contenidoBytes = bytesLatin1(paginas[j]);
+    objetos[3 + 2 * j] = bytesLatin1('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ' + fuente1 + ' 0 R /F2 ' + fuente2 + ' 0 R >> >> /Contents ' + (4 + 2 * j) + ' 0 R >>');
+    objetos[4 + 2 * j] = unirBytes([bytesLatin1('<< /Length ' + contenidoBytes.length + ' >>\nstream\n'), contenidoBytes, bytesLatin1('\nendstream')]);
+  }
+  objetos[fuente1] = bytesLatin1('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+  objetos[fuente2] = bytesLatin1('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+  var partes = [bytesLatin1('%PDF-1.4\n')];
+  var offsets = [0];
+  var pos = partes[0].length;
+  for (var n = 1; n <= totalObjetos; n++) {
+    offsets[n] = pos;
+    var cab = bytesLatin1(n + ' 0 obj\n');
+    var pie = bytesLatin1('\nendobj\n');
+    partes.push(cab); pos += cab.length;
+    partes.push(objetos[n]); pos += objetos[n].length;
+    partes.push(pie); pos += pie.length;
+  }
+  var xrefPos = pos;
+  var xref = 'xref\n0 ' + (totalObjetos + 1) + '\n0000000000 65535 f \n';
+  for (var q = 1; q <= totalObjetos; q++) {
+    var off = String(offsets[q]);
+    while (off.length < 10) { off = '0' + off; }
+    xref += off + ' 00000 n \n';
+  }
+  xref += 'trailer\n<< /Size ' + (totalObjetos + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF';
+  partes.push(bytesLatin1(xref));
+  return unirBytes(partes);
+}
+function nombreArchivoResumen(fecha) {
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return 'resumen-almacen-' + fecha.getFullYear() + p(fecha.getMonth() + 1) + p(fecha.getDate()) + '.pdf';
+}
+function validarMovimiento(d) {
+  if (!d || !isFinite(Number(d.cantidad)) || Number(d.cantidad) <= 0) { return 'La cantidad debe ser mayor que cero.'; }
+  if ((d.tipo === 'Entrada' || d.tipo === 'Transferencia') && !String(d.origen || '').trim()) { return 'Escribe el origen a mano.'; }
+  if (d.tipo === 'Salida' && !String(d.observaciones || '').trim()) { return 'En salida, escribe el motivo en observaciones: merma, traslado u otro.'; }
+  if ((d.tipo === 'Entrada' || d.tipo === 'Venta' || d.tipo === 'Transferencia') && !d.tieneFoto) { return 'Agrega la foto de la factura, una sola foto.'; }
+  if ((d.tipo === 'Venta' || d.tipo === 'Salida' || d.tipo === 'Transferencia') && Number(d.cantidad) > Number(d.stockActual)) { return 'No hay suficiente stock. Quedan ' + formatearCantidad(d.stockActual) + '.'; }
+  if (d.tipo !== 'Entrada' && d.tipo !== 'Venta' && d.tipo !== 'Salida' && d.tipo !== 'Transferencia') { return 'Elige un tipo de movimiento.'; }
+  return null;
+}
+var LOGICA = { calcularStock: calcularStock, siguienteFolio: siguienteFolio, formatearFolio: formatearFolio, formatearCantidad: formatearCantidad, normalizarTexto: normalizarTexto, escaparHtml: escaparHtml, validarMovimiento: validarMovimiento, validarRespaldo: validarRespaldo, generarResumenTexto: generarResumenTexto, datosResumenPDF: datosResumenPDF, construirResumenPDFBytes: construirResumenPDFBytes, nombreArchivoResumen: nombreArchivoResumen, pdfEscapeTexto: pdfEscapeTexto, envolverTexto: envolverTexto, ajustarImagen: ajustarImagen, nombreArchivoTicket: nombreArchivoTicket, construirPDFBytes: construirPDFBytes };
+if (typeof module !== 'undefined' && module.exports) { module.exports = LOGICA; }
+
+var productos = [];
+var movimientos = [];
+var fotoIds = {};
+var fotosCache = {};
+var fotoMovimientoActual = null;
+var fotoInicialActual = null;
+var tipoActual = 'Entrada';
+var filtroProductoId = null;
+var editandoId = null;
+var dbNombre = 'almacen-refrigerado-v3';
+
+function abrirDB() {
+  return new Promise(function (resolve, reject) {
+    var req = indexedDB.open(dbNombre, 2);
+    req.onupgradeneeded = function () {
+      var db = req.result;
+      if (!db.objectStoreNames.contains('productos')) {
+        var p = db.createObjectStore('productos', { keyPath: 'id' });
+        p.createIndex('codigoNorm', 'codigoNorm', { unique: true });
+      }
+      if (!db.objectStoreNames.contains('movimientos')) {
+        db.createObjectStore('movimientos', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('fotos')) {
+        db.createObjectStore('fotos', { keyPath: 'movimientoId' });
+      }
+    };
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error); };
+  });
+}
+function txCompleta(store, modo, hacer) {
+  return abrirDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var t = db.transaction(store, modo);
+      var s = t.objectStore(store);
+      var resultado;
+      try { resultado = hacer(s); } catch (e) { reject(e); return; }
+      t.oncomplete = function () { resolve(resultado); };
+      t.onerror = function () { reject(t.error); };
+      t.onabort = function () { reject(t.error); };
+    });
+  });
+}
+function guardarEn(store, valor) {
+  return txCompleta(store, 'readwrite', function (s) { s.put(valor); });
+}
+function leerTodos(store) {
+  return abrirDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var t = db.transaction(store, 'readonly');
+      var req = t.objectStore(store).getAll();
+      req.onsuccess = function () { resolve(req.result || []); };
+      req.onerror = function () { reject(req.error); };
+    });
+  });
+}
+function leerUno(store, clave) {
+  return abrirDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var t = db.transaction(store, 'readonly');
+      var req = t.objectStore(store).get(clave);
+      req.onsuccess = function () { resolve(req.result || null); };
+      req.onerror = function () { reject(req.error); };
+    });
+  });
+}
+function leerClaves(store) {
+  return abrirDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var t = db.transaction(store, 'readonly');
+      var req = t.objectStore(store).getAllKeys();
+      req.onsuccess = function () { resolve(req.result || []); };
+      req.onerror = function () { reject(req.error); };
+    });
+  });
+}
+function tamanoKB(datos) {
+  var base = String(datos || '').split(',')[1] || '';
+  return Math.round((base.length * 3 / 4) / 1024);
+}
+function comprimirImagen(archivo) {
+  return new Promise(function (resolve, reject) {
+    if (!archivo || archivo.type.indexOf('image/') !== 0) { reject(new Error('El archivo no es una imagen.')); return; }
+    var url = URL.createObjectURL(archivo);
+    var img = new Image();
+    img.onload = function () {
+      URL.revokeObjectURL(url);
+      var max = 1600;
+      var w = img.naturalWidth || img.width;
+      var h = img.naturalHeight || img.height;
+      var escala = Math.min(1, max / Math.max(w, h));
+      var lienzo = document.createElement('canvas');
+      lienzo.width = Math.max(1, Math.round(w * escala));
+      lienzo.height = Math.max(1, Math.round(h * escala));
+      var ctx = lienzo.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+      ctx.drawImage(img, 0, 0, lienzo.width, lienzo.height);
+      resolve(lienzo.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen.')); };
+    img.src = url;
+  });
+}
+function nuevoId() {
+  return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+}
+function ahoraLocal() {
+  var d = new Date();
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function formatearFecha(iso) {
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) { return String(iso || ''); }
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function productoPorId(id) {
+  for (var i = 0; i < productos.length; i++) { if (productos[i].id === id) { return productos[i]; } }
+  return null;
+}
+function stockDe(producto) { return calcularStock(producto, movimientos); }
+
+function quitarFotoMovimiento() {
+  fotoMovimientoActual = null;
+  document.getElementById('m-foto').value = '';
+  document.getElementById('vista-m-foto').classList.add('oculto');
+  document.getElementById('vista-m-foto').removeAttribute('src');
+  document.getElementById('info-m-foto').textContent = '';
+}
+function quitarFotoInicial() {
+  fotoInicialActual = null;
+  document.getElementById('p-foto').value = '';
+  document.getElementById('vista-p-foto').classList.add('oculto');
+  document.getElementById('vista-p-foto').removeAttribute('src');
+  document.getElementById('info-p-foto').textContent = '';
+}
+function alElegirFotoMovimiento() {
+  var input = document.getElementById('m-foto');
+  var archivo = input.files && input.files[0];
+  if (!archivo) { quitarFotoMovimiento(); return; }
+  document.getElementById('info-m-foto').textContent = 'Procesando la foto...';
+  comprimirImagen(archivo).then(function (datos) {
+    fotoMovimientoActual = datos;
+    var vista = document.getElementById('vista-m-foto');
+    vista.src = datos;
+    vista.classList.remove('oculto');
+    document.getElementById('info-m-foto').textContent = 'Foto lista.';
+  }).catch(function () {
+    quitarFotoMovimiento();
+    mostrarMensaje('mensaje-movimiento', 'No se pudo leer esa imagen. Elige otra foto.', 'error');
+  });
+}
+function alElegirFotoInicial() {
+  var input = document.getElementById('p-foto');
+  var archivo = input.files && input.files[0];
+  if (!archivo) { quitarFotoInicial(); return; }
+  document.getElementById('info-p-foto').textContent = 'Procesando la foto...';
+  comprimirImagen(archivo).then(function (datos) {
+    fotoInicialActual = datos;
+    var vista = document.getElementById('vista-p-foto');
+    vista.src = datos;
+    vista.classList.remove('oculto');
+    document.getElementById('info-p-foto').textContent = 'Foto lista.';
+  }).catch(function () {
+    quitarFotoInicial();
+    mostrarMensaje('mensaje-producto', 'No se pudo leer esa imagen. Elige otra foto.', 'error');
+  });
+}
+function actualizarFotoInicialSegunStock() {
+  var stock = Number(document.getElementById('p-stock').value);
+  var mostrar = !editandoId && isFinite(stock) && stock > 0;
+  document.getElementById('campo-foto-inicial').classList.toggle('oculto', !mostrar);
+  if (!mostrar) { quitarFotoInicial(); }
+}
+function verFoto(movimientoId, boton) {
+  var cont = document.getElementById('foto-' + movimientoId);
+  if (!cont) { return; }
+  if (cont.dataset.abierta === 'si') {
+    cont.innerHTML = '';
+    cont.dataset.abierta = 'no';
+    boton.textContent = 'Ver foto de la factura';
+    return;
+  }
+  boton.textContent = 'Cargando foto...';
+  boton.disabled = true;
+  var mostrar = function (datos) {
+    cont.innerHTML = '';
+    var img = document.createElement('img');
+    img.className = 'foto-grande';
+    img.alt = 'Foto de la factura';
+    img.src = datos;
+    cont.appendChild(img);
+    var enlace = document.createElement('a');
+    enlace.href = datos;
+    enlace.target = '_blank';
+    enlace.rel = 'noopener';
+    enlace.textContent = 'Abrir foto en tamaño completo';
+    cont.appendChild(enlace);
+    cont.dataset.abierta = 'si';
+    boton.textContent = 'Ocultar foto';
+    boton.disabled = false;
+  };
+  if (fotosCache[movimientoId]) { mostrar(fotosCache[movimientoId]); return; }
+  leerUno('fotos', movimientoId).then(function (foto) {
+    if (!foto || !foto.datos) { boton.textContent = 'Sin foto guardada'; boton.disabled = false; return; }
+    fotosCache[movimientoId] = foto.datos;
+    mostrar(foto.datos);
+  }).catch(function () { boton.textContent = 'Ver foto de la factura'; boton.disabled = false; });
+}
+function datosURLABytes(datosURL) {
+  var base = String(datosURL || '').split(',')[1] || '';
+  var bin = atob(base);
+  var b = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) { b[i] = bin.charCodeAt(i); }
+  return b;
+}
+function dimensionesImagen(datosURL) {
+  return new Promise(function (resolve, reject) {
+    var img = new Image();
+    img.onload = function () { resolve({ ancho: img.naturalWidth || img.width, alto: img.naturalHeight || img.height }); };
+    img.onerror = function () { reject(new Error('No se pudo leer la foto.')); };
+    img.src = datosURL;
+  });
+}
+function movimientoPorId(id) {
+  for (var i = 0; i < movimientos.length; i++) { if (movimientos[i].id === id) { return movimientos[i]; } }
+  return null;
+}
+function generarTicketBlob(m) {
+  return leerUno('fotos', m.id).then(function (foto) {
+    if (!foto || !foto.datos) { return new Blob([construirPDFBytes({
+      tipo: m.tipo, folio: m.folio, fechaTexto: formatearFecha(m.fecha), nombre: m.nombre, codigo: m.codigo,
+      unidad: m.unidad, cantidad: m.cantidad, antes: m.antes, despues: m.despues,
+      origen: m.origen, destino: m.destino, observaciones: m.observaciones,
+      entrega: m.entrega, recibe: m.recibe, esInicial: !!m.esInicial
+    }, null)], { type: 'application/pdf' }); }
+    return dimensionesImagen(foto.datos).then(function (dim) {
+      var bytes = construirPDFBytes({
+        tipo: m.tipo, folio: m.folio, fechaTexto: formatearFecha(m.fecha), nombre: m.nombre, codigo: m.codigo,
+        unidad: m.unidad, cantidad: m.cantidad, antes: m.antes, despues: m.despues,
+        origen: m.origen, destino: m.destino, observaciones: m.observaciones,
+        entrega: m.entrega, recibe: m.recibe, esInicial: !!m.esInicial
+      }, { bytes: datosURLABytes(foto.datos), ancho: dim.ancho, alto: dim.alto });
+      return new Blob([bytes], { type: 'application/pdf' });
+    });
+  });
+}
+function descargarArchivo(blob, nombre) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+}
+function descargarTicket(id, boton) {
+  var m = movimientoPorId(id);
+  if (!m) { return; }
+  if (boton) { boton.disabled = true; boton.textContent = 'Generando PDF...'; }
+  generarTicketBlob(m).then(function (blob) {
+    descargarArchivo(blob, nombreArchivoTicket(m));
+    mostrarMensaje('mensaje-ticket', 'Ticket PDF descargado: ' + nombreArchivoTicket(m) + '.', 'ok');
+    if (boton) { boton.disabled = false; boton.textContent = 'Ticket PDF'; }
+  }).catch(function () {
+    mostrarMensaje('mensaje-ticket', 'No se pudo generar el PDF. Prueba de nuevo.', 'error');
+    if (boton) { boton.disabled = false; boton.textContent = 'Ticket PDF'; }
+  });
+}
+function compartirTicket(id, boton) {
+  var m = movimientoPorId(id);
+  if (!m) { return; }
+  if (boton) { boton.disabled = true; boton.textContent = 'Preparando...'; }
+  generarTicketBlob(m).then(function (blob) {
+    var archivo = new File([blob], nombreArchivoTicket(m), { type: 'application/pdf' });
+    var texto = 'Ticket ' + m.folio + ' - ' + m.tipo + ' - ' + m.nombre + ' - ' + formatearCantidad(m.cantidad) + ' ' + m.unidad;
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [archivo] })) {
+      return navigator.share({ title: 'Ticket ' + m.folio, text: texto, files: [archivo] }).then(function () {
+        mostrarMensaje('mensaje-ticket', 'Ticket compartido.', 'ok');
+      }).catch(function (err) {
+        if (err && err.name === 'AbortError') { mostrarMensaje('mensaje-ticket', 'Compartir cancelado. El PDF no se descargó.', ''); }
+        else { descargarArchivo(blob, nombreArchivoTicket(m)); mostrarMensaje('mensaje-ticket', 'No se pudo compartir directo. PDF descargado: compártelo por WhatsApp desde Descargas.', 'ok'); }
+      });
+    }
+    descargarArchivo(blob, nombreArchivoTicket(m));
+    mostrarMensaje('mensaje-ticket', 'Este teléfono no permite compartir el archivo directo. PDF descargado: compártelo por WhatsApp desde Descargas.', 'ok');
+  }).catch(function () {
+    mostrarMensaje('mensaje-ticket', 'No se pudo generar el PDF. Prueba de nuevo.', 'error');
+  }).then(function () {
+    if (boton) { boton.disabled = false; boton.textContent = 'Compartir por WhatsApp'; }
+  });
+}
+function renderRespaldo() {
+  var info = document.getElementById('info-respaldo');
+  var nFotos = Object.keys(fotoIds || {}).length;
+  info.textContent = productos.length + ' productos, ' + movimientos.length + ' movimientos y ' + nFotos + ' fotos guardadas.';
+  leerTodos('fotos').then(function (lista) {
+    var totalBytes = 0;
+    for (var i = 0; i < lista.length; i++) { totalBytes += (lista[i].datos || '').length; }
+    info.textContent = productos.length + ' productos, ' + movimientos.length + ' movimientos y ' + lista.length + ' fotos guardadas. Tamaño aproximado de las fotos: ' + Math.round(totalBytes / 1024) + ' KB.';
+  }).catch(function () {});
+}
+function nombreArchivoRespaldo(fecha) {
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return 'respaldo-almacen-' + fecha.getFullYear() + p(fecha.getMonth() + 1) + p(fecha.getDate()) + '-' + p(fecha.getHours()) + p(fecha.getMinutes()) + '.json';
+}
+function exportarRespaldo() {
+  var mensaje = document.getElementById('mensaje-respaldo');
+  mensaje.textContent = 'Preparando el respaldo…'; mensaje.className = 'mensaje';
+  leerTodos('fotos').then(function (fotosLista) {
+    var fotos = fotosLista.map(function (f) { return { movimientoId: f.movimientoId, datos: f.datos }; });
+    var respaldo = { app: 'Almacén refrigerado', version: 1, exportadoEn: new Date().toISOString(), productos: productos, movimientos: movimientos, fotos: fotos };
+    var texto = JSON.stringify(respaldo);
+    descargarArchivo(new Blob([texto], { type: 'application/json' }), nombreArchivoRespaldo(new Date()));
+    mensaje.textContent = 'Respaldo exportado: ' + productos.length + ' productos, ' + movimientos.length + ' movimientos y ' + fotos.length + ' fotos.';
+    mensaje.className = 'mensaje ok';
+  }).catch(function () {
+    mensaje.textContent = 'No se pudo leer las fotos para el respaldo. Inténtalo de nuevo.';
+    mensaje.className = 'mensaje error';
+  });
+}
+function reemplazarTodo(datos) {
+  return abrirDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var t = db.transaction(['productos', 'movimientos', 'fotos'], 'readwrite');
+      var p = t.objectStore('productos');
+      p.clear();
+      for (var i = 0; i < datos.productos.length; i++) { p.put(datos.productos[i]); }
+      var m = t.objectStore('movimientos');
+      m.clear();
+      for (var j = 0; j < datos.movimientos.length; j++) { m.put(datos.movimientos[j]); }
+      var f = t.objectStore('fotos');
+      f.clear();
+      for (var k = 0; k < datos.fotos.length; k++) { f.put(datos.fotos[k]); }
+      t.oncomplete = function () { resolve(); };
+      t.onerror = function () { reject(t.error || new Error('No se pudo importar el respaldo.')); };
+      t.onabort = function () { reject(t.error || new Error('La importación se canceló.')); };
+    });
+  });
+}
+async function importarRespaldo() {
+  var input = document.getElementById('archivo-respaldo');
+  var mensaje = document.getElementById('mensaje-respaldo');
+  if (!input.files || !input.files.length) {
+    mensaje.textContent = 'Elige primero un archivo de respaldo.';
+    mensaje.className = 'mensaje error';
+    return;
+  }
+  var archivo = input.files[0];
+  var texto;
+  try { texto = await archivo.text(); } catch (e) {
+    mensaje.textContent = 'No se pudo leer el archivo.';
+    mensaje.className = 'mensaje error';
+    return;
+  }
+  var datos;
+  try { datos = JSON.parse(texto); } catch (e) {
+    mensaje.textContent = 'El archivo no es un respaldo válido.';
+    mensaje.className = 'mensaje error';
+    return;
+  }
+  var error = validarRespaldo(datos);
+  if (error) {
+    mensaje.textContent = error;
+    mensaje.className = 'mensaje error';
+    return;
+  }
+  if (!confirm('Importar reemplaza todos los productos, movimientos y fotos de este teléfono por los del respaldo. ¿Seguro que quieres seguir?')) { return; }
+  try {
+    await reemplazarTodo(datos);
+    await cargarDatos();
+    renderProductos(); renderHistorial(); renderRespaldo();
+    input.value = '';
+    mensaje.textContent = 'Respaldo importado: ' + datos.productos.length + ' productos, ' + datos.movimientos.length + ' movimientos y ' + datos.fotos.length + ' fotos.';
+    mensaje.className = 'mensaje ok';
+  } catch (e) {
+    mensaje.textContent = 'No se pudo importar el respaldo' + (e && e.name ? ' (' + e.name + ')' : '') + '. No se cambió ningún dato. Inténtalo de nuevo con el mismo archivo.';
+    mensaje.className = 'mensaje error';
+  }
+}
+function generarResumenUI() {
+  var desde = document.getElementById('resumen-desde').value || '';
+  var hasta = document.getElementById('resumen-hasta').value || '';
+  var texto = generarResumenTexto({ productos: productos, movimientos: movimientos, fotoIds: fotoIds, desde: desde, hasta: hasta, generadoEnTexto: formatearFecha(new Date().toISOString()) });
+  document.getElementById('resumen-texto').value = texto;
+  document.getElementById('mensaje-resumen').textContent = 'Resumen generado, sin fotos.';
+  document.getElementById('mensaje-resumen').className = 'mensaje ok';
+}
+function descargarResumen() {
+  var texto = document.getElementById('resumen-texto').value;
+  if (!texto) {
+    document.getElementById('mensaje-resumen').textContent = 'Genera primero el resumen.';
+    document.getElementById('mensaje-resumen').className = 'mensaje error';
+    return;
+  }
+  descargarArchivo(new Blob([texto], { type: 'text/plain;charset=utf-8' }), 'resumen-almacen.txt');
+}
+function datosResumenActual() {
+  var desde = document.getElementById('resumen-desde').value || '';
+  var hasta = document.getElementById('resumen-hasta').value || '';
+  return datosResumenPDF({ productos: productos, movimientos: movimientos, desde: desde, hasta: hasta, generadoEnTexto: formatearFecha(new Date().toISOString()) });
+}
+function descargarResumenPDF() {
+  var bytes = construirResumenPDFBytes(datosResumenActual());
+  descargarArchivo(new Blob([bytes], { type: 'application/pdf' }), nombreArchivoResumen(new Date()));
+  document.getElementById('mensaje-resumen').textContent = 'Resumen en PDF descargado, con tablas por tipo y fecha.';
+  document.getElementById('mensaje-resumen').className = 'mensaje ok';
+}
+function compartirResumenPDF() {
+  var mensaje = document.getElementById('mensaje-resumen');
+  var bytes = construirResumenPDFBytes(datosResumenActual());
+  var archivo = new File([bytes], nombreArchivoResumen(new Date()), { type: 'application/pdf' });
+  if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+    navigator.share({ files: [archivo], title: 'Resumen - Almacén refrigerado' }).catch(function () {});
+  } else {
+    descargarResumenPDF();
+    mensaje.textContent = 'Este teléfono no permite compartir el archivo desde aquí. Se descargó el resumen en PDF: compártelo desde Descargas.';
+    mensaje.className = 'mensaje';
+  }
+}
+function compartirResumen() {
+  var texto = document.getElementById('resumen-texto').value;
+  var mensaje = document.getElementById('mensaje-resumen');
+  if (!texto) { mensaje.textContent = 'Genera primero el resumen.'; mensaje.className = 'mensaje error'; return; }
+  var archivo = new File([texto], 'resumen-almacen.txt', { type: 'text/plain;charset=utf-8' });
+  if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+    navigator.share({ files: [archivo], title: 'Resumen - Almacén refrigerado' }).catch(function () {});
+  } else {
+    descargarResumen();
+    mensaje.textContent = 'Este teléfono no permite compartir el archivo desde aquí. Se descargó el resumen: compártelo desde Descargas.';
+    mensaje.className = 'mensaje';
+  }
+}
+function copiarResumen() {
+  var area = document.getElementById('resumen-texto');
+  var mensaje = document.getElementById('mensaje-resumen');
+  if (!area.value) { mensaje.textContent = 'Genera primero el resumen.'; mensaje.className = 'mensaje error'; return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(area.value).then(function () {
+      mensaje.textContent = 'Resumen copiado.';
+      mensaje.className = 'mensaje ok';
+    }).catch(function () {
+      area.select();
+      mensaje.textContent = 'No se pudo copiar automáticamente. El texto quedó seleccionado: cópialo con el menú del teléfono.';
+      mensaje.className = 'mensaje';
+    });
+  } else {
+    area.select();
+    mensaje.textContent = 'El texto quedó seleccionado: cópialo con el menú del teléfono.';
+    mensaje.className = 'mensaje';
+  }
+}
+function mostrarTab(nombre) {
+  var secciones = ['productos', 'movimiento', 'historial', 'respaldo'];
+  for (var i = 0; i < secciones.length; i++) {
+    document.getElementById('seccion-' + secciones[i]).classList.toggle('visible', secciones[i] === nombre);
+    document.getElementById('tab-' + secciones[i]).classList.toggle('activa', secciones[i] === nombre);
+  }
+  if (nombre === 'historial') { renderHistorial(); }
+  if (nombre === 'productos') { renderProductos(); }
+  if (nombre === 'respaldo') { renderRespaldo(); }
+}
+function mostrarMensaje(id, texto, tipo) {
+  var el = document.getElementById(id);
+  el.textContent = texto;
+  el.className = 'mensaje ' + tipo;
+}
+function limpiarMensaje(id) {
+  var el = document.getElementById(id);
+  el.textContent = '';
+  el.className = 'mensaje';
+}
+
+function renderGraficoStock() {
+  var cont = document.getElementById('grafico-stock');
+  if (!cont) { return; }
+  if (!productos.length) { cont.innerHTML = ''; return; }
+  var ordenados = productos.slice().sort(function (a, b) { return normalizarTexto(a.nombre) < normalizarTexto(b.nombre) ? -1 : 1; });
+  var maximo = 0;
+  for (var i = 0; i < ordenados.length; i++) { maximo = Math.max(maximo, stockDe(ordenados[i])); }
+  if (maximo <= 0) { maximo = 1; }
+  var html = '<div class="tarjeta"><h2>Stock por producto</h2>';
+  for (var j = 0; j < ordenados.length; j++) {
+    var p = ordenados[j];
+    var stock = stockDe(p);
+    var ancho = stock > 0 ? Math.max(2, Math.round(stock / maximo * 100)) : 0;
+    html += '<div class="fila-grafico"><div class="grafico-etiqueta"><span>' + escaparHtml(p.nombre) + '</span><strong>' + formatearCantidad(stock) + ' ' + escaparHtml(p.unidad) + '</strong></div>'
+      + '<div class="barra-fondo"><div class="barra" style="width:' + ancho + '%"></div></div></div>';
+  }
+  html += '</div>';
+  cont.innerHTML = html;
+}
+function renderProductos() {
+  var q = normalizarTexto(document.getElementById('buscar-producto').value);
+  var lista = document.getElementById('lista-productos');
+  renderGraficoStock();
+  var filtrados = productos.filter(function (p) {
+    if (!q) { return true; }
+    return normalizarTexto(p.nombre).indexOf(q) !== -1 || normalizarTexto(p.codigo).indexOf(q) !== -1;
+  });
+  filtrados.sort(function (a, b) { return normalizarTexto(a.nombre) < normalizarTexto(b.nombre) ? -1 : 1; });
+  if (!filtrados.length) {
+    lista.innerHTML = '<div class="vacio">📦 No hay productos todavía. Crea el primero con el botón Nuevo producto.</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < filtrados.length; i++) {
+    var p = filtrados[i];
+    var stock = stockDe(p);
+    html += '<div class="producto"><h3>' + escaparHtml(p.nombre) + '</h3>'
+      + '<div class="meta">Código: ' + escaparHtml(p.codigo) + ' &nbsp; Unidad: ' + escaparHtml(p.unidad) + '</div>'
+      + '<div class="stock' + (stock <= 0 ? ' stock-cero' : '') + '">' + formatearCantidad(stock) + ' ' + escaparHtml(p.unidad) + (stock <= 0 ? ' <span class="insignia-agotado">Agotado</span>' : '') + '</div>'
+      + '<div class="meta">Stock inicial: ' + formatearCantidad(p.stockInicial) + ' ' + escaparHtml(p.unidad) + '</div>'
+      + '<div class="acciones">'
+      + '<button type="button" class="principal" onclick="irAMovimiento(\'' + p.id + '\', \'Entrada\')">Entrada</button>'
+      + '<button type="button" onclick="irAMovimiento(\'' + p.id + '\', \'Venta\')">Venta</button>'
+      + '<button type="button" onclick="irAMovimiento(\'' + p.id + '\', \'Salida\')">Salida</button>'
+      + '<button type="button" onclick="irAMovimiento(\'' + p.id + '\', \'Transferencia\')">Transferencia</button>'
+      + '<button type="button" onclick="verMovimientosProducto(\'' + p.id + '\')">Ver movimientos</button>'
+      + '<button type="button" onclick="abrirEditarProducto(\'' + p.id + '\')">Editar</button>'
+      + '</div></div>';
+  }
+  lista.innerHTML = html;
+}
+function abrirNuevoProducto() {
+  editandoId = null;
+  document.getElementById('titulo-producto').textContent = 'Nuevo producto';
+  document.getElementById('p-nombre').value = '';
+  document.getElementById('p-codigo').value = '';
+  document.getElementById('p-unidad').value = '';
+  document.getElementById('p-stock').value = '0';
+  document.getElementById('p-origen').value = '';
+  document.getElementById('p-observaciones').value = '';
+  document.getElementById('campo-stock-inicial').classList.remove('oculto');
+  document.getElementById('campo-inicial-extra').classList.remove('oculto');
+  quitarFotoInicial();
+  actualizarFotoInicialSegunStock();
+  limpiarMensaje('mensaje-producto');
+  document.getElementById('form-producto').classList.remove('oculto');
+  document.getElementById('p-nombre').focus();
+}
+function abrirEditarProducto(id) {
+  var p = productoPorId(id);
+  if (!p) { return; }
+  editandoId = id;
+  document.getElementById('titulo-producto').textContent = 'Editar producto';
+  document.getElementById('p-nombre').value = p.nombre;
+  document.getElementById('p-codigo').value = p.codigo;
+  document.getElementById('p-unidad').value = p.unidad;
+  document.getElementById('campo-stock-inicial').classList.add('oculto');
+  document.getElementById('campo-inicial-extra').classList.add('oculto');
+  document.getElementById('campo-foto-inicial').classList.add('oculto');
+  quitarFotoInicial();
+  limpiarMensaje('mensaje-producto');
+  document.getElementById('form-producto').classList.remove('oculto');
+  document.getElementById('p-nombre').focus();
+}
+function cerrarFormProducto() {
+  document.getElementById('form-producto').classList.add('oculto');
+  editandoId = null;
+  quitarFotoInicial();
+}
+function guardarProducto(e) {
+  e.preventDefault();
+  var nombre = document.getElementById('p-nombre').value.trim();
+  var codigo = document.getElementById('p-codigo').value.trim();
+  var unidad = document.getElementById('p-unidad').value.trim();
+  var codigoNorm = normalizarTexto(codigo);
+  if (!nombre) { mostrarMensaje('mensaje-producto', 'Escribe el nombre del producto.', 'error'); return; }
+  if (!codigo) { mostrarMensaje('mensaje-producto', 'Escribe el código único del producto.', 'error'); return; }
+  if (!unidad) { mostrarMensaje('mensaje-producto', 'Escribe la unidad: cajas, libras, kilogramos...', 'error'); return; }
+  for (var i = 0; i < productos.length; i++) {
+    if (productos[i].codigoNorm === codigoNorm && productos[i].id !== editandoId) {
+      mostrarMensaje('mensaje-producto', 'Ese código ya existe en otro producto. Usa un código distinto.', 'error'); return;
+    }
+  }
+  if (editandoId) {
+    var p = productoPorId(editandoId);
+    p.nombre = nombre; p.codigo = codigo; p.codigoNorm = codigoNorm; p.unidad = unidad; p.actualizadoEn = new Date().toISOString();
+    guardarEn('productos', p).then(function () { return cargarDatos(); }).then(function () {
+      renderProductos(); cerrarFormProducto();
+      mostrarMensaje('mensaje-producto', '', '');
+    }).catch(function (err) { mostrarMensaje('mensaje-producto', 'No se pudo guardar. ' + (err && err.message ? err.message : ''), 'error'); });
+    return;
+  }
+  var stockInicial = Number(document.getElementById('p-stock').value);
+  if (!isFinite(stockInicial) || stockInicial < 0) { mostrarMensaje('mensaje-producto', 'El stock inicial debe ser cero o más.', 'error'); return; }
+  var origenInicial = document.getElementById('p-origen').value.trim();
+  var observacionesInicial = document.getElementById('p-observaciones').value.trim();
+  if (stockInicial > 0 && !origenInicial) { mostrarMensaje('mensaje-producto', 'Escribe el origen a mano para el stock inicial.', 'error'); return; }
+  var nuevo = { id: nuevoId(), nombre: nombre, codigo: codigo, codigoNorm: codigoNorm, unidad: unidad, stockInicial: stockInicial, creadoEn: new Date().toISOString(), actualizadoEn: new Date().toISOString() };
+  guardarEn('productos', nuevo).then(function () {
+    if (stockInicial <= 0) { return null; }
+    var folioNum = siguienteFolio(movimientos);
+    var entradaInicial = {
+      id: nuevoId(), folioNum: folioNum, folio: formatearFolio(folioNum), tipo: 'Entrada',
+      productoId: nuevo.id, codigo: nuevo.codigo, nombre: nuevo.nombre, unidad: nuevo.unidad,
+      cantidad: stockInicial, antes: 0, despues: stockInicial,
+      fecha: new Date().toISOString(), origen: origenInicial, destino: '',
+      observaciones: observacionesInicial, entrega: '', recibe: '',
+      esInicial: true, creadoEn: new Date().toISOString()
+    };
+    return guardarEn('movimientos', entradaInicial).then(function () {
+      if (!fotoInicialActual) { return null; }
+      return guardarEn('fotos', { movimientoId: entradaInicial.id, datos: fotoInicialActual, creadoEn: new Date().toISOString() });
+    });
+  }).then(function () { return cargarDatos(); }).then(function () {
+    renderProductos(); cerrarFormProducto();
+  }).catch(function (err) { mostrarMensaje('mensaje-producto', 'No se pudo guardar. Puede que el código ya exista. ' + (err && err.message ? err.message : ''), 'error'); });
+}
+
+function elegirTipo(tipo) {
+  tipoActual = tipo;
+  var tipos = ['Entrada', 'Venta', 'Salida', 'Transferencia'];
+  for (var i = 0; i < tipos.length; i++) {
+    document.getElementById('tipo-' + tipos[i].toLowerCase()).classList.toggle('activo', tipos[i] === tipo);
+  }
+  var ayudas = {
+    'Entrada': 'Entra cantidad al almacén.',
+    'Venta': 'Despacho con factura y foto.',
+    'Salida': 'Sin factura. Escribe el motivo.',
+    'Transferencia': 'Sale del almacén hacia el destino.'
+  };
+  document.getElementById('ayuda-tipo').textContent = ayudas[tipo];
+  document.getElementById('campo-origen').classList.toggle('oculto', !(tipo === 'Entrada' || tipo === 'Transferencia'));
+  document.getElementById('campo-destino').classList.toggle('oculto', tipo !== 'Transferencia');
+  var conFoto = tipo !== 'Salida';
+  document.getElementById('campo-foto').classList.toggle('oculto', !conFoto);
+  if (!conFoto) { quitarFotoMovimiento(); }
+  actualizarMovimiento();
+}
+function textoProducto(p) {
+  return p.nombre + ' (' + p.codigo + ')';
+}
+function productoEscritoExacto() {
+  var texto = normalizarTexto((document.getElementById('m-producto-texto').value || '').trim());
+  if (!texto) { return null; }
+  var exactos = productos.filter(function (p) {
+    return normalizarTexto(p.nombre) === texto || normalizarTexto(p.codigo) === texto || normalizarTexto(textoProducto(p)) === texto;
+  });
+  return exactos.length === 1 ? exactos[0] : null;
+}
+function mostrarSugerenciasProducto(q) {
+  var cont = document.getElementById('sugerencias-producto');
+  var texto = normalizarTexto((q || '').trim());
+  if (!texto) { cont.innerHTML = ''; return; }
+  var matches = productos.filter(function (p) {
+    return normalizarTexto(p.nombre + ' ' + p.codigo).indexOf(texto) !== -1;
+  }).sort(function (a, b) { return normalizarTexto(a.nombre) < normalizarTexto(b.nombre) ? -1 : 1; }).slice(0, 8);
+  if (!matches.length) { cont.innerHTML = '<div class="meta">Sin productos con ese nombre o código.</div>'; return; }
+  var html = '';
+  for (var i = 0; i < matches.length; i++) {
+    var p = matches[i];
+    html += '<button type="button" onclick="elegirSugerenciaProducto(\'' + p.id + '\')"><strong>' + escaparHtml(p.nombre) + '</strong> (' + escaparHtml(p.codigo) + ')'
+      + '<span class="meta">Stock: ' + formatearCantidad(stockDe(p)) + ' ' + escaparHtml(p.unidad) + '</span></button>';
+  }
+  cont.innerHTML = html;
+}
+function alEscribirProducto() {
+  document.getElementById('m-producto').value = '';
+  mostrarSugerenciasProducto(document.getElementById('m-producto-texto').value);
+  actualizarMovimiento();
+}
+function alEnfocarProducto() {
+  mostrarSugerenciasProducto(document.getElementById('m-producto-texto').value);
+}
+function elegirSugerenciaProducto(id, enfocarCantidad) {
+  var p = productoPorId(id);
+  if (!p) { return; }
+  document.getElementById('m-producto').value = id;
+  document.getElementById('m-producto-texto').value = textoProducto(p);
+  document.getElementById('sugerencias-producto').innerHTML = '';
+  actualizarMovimiento();
+  if (enfocarCantidad !== false) { document.getElementById('m-cantidad').focus(); }
+}
+function alSalirProducto() {
+  setTimeout(function () {
+    if (document.getElementById('m-producto').value) { document.getElementById('sugerencias-producto').innerHTML = ''; return; }
+    var p = productoEscritoExacto();
+    if (p) { elegirSugerenciaProducto(p.id, false); } else { document.getElementById('sugerencias-producto').innerHTML = ''; }
+  }, 150);
+}
+function irAMovimiento(id, tipo) {
+  var p = productoPorId(id);
+  document.getElementById('m-producto').value = id;
+  if (p) { document.getElementById('m-producto-texto').value = textoProducto(p); }
+  document.getElementById('sugerencias-producto').innerHTML = '';
+  elegirTipo(tipo);
+  mostrarTab('movimiento');
+  document.getElementById('m-cantidad').focus();
+}
+function actualizarMovimiento() {
+  var sel = document.getElementById('m-producto');
+  var p = sel && sel.value ? productoPorId(sel.value) : null;
+  var cantidad = Number(document.getElementById('m-cantidad').value);
+  document.getElementById('ayuda-unidad').textContent = p ? ('Unidad de este producto: ' + p.unidad) : '';
+  document.getElementById('vista-folio').textContent = '📋 Folio: ' + formatearFolio(siguienteFolio(movimientos)) + ' (se asigna al guardar)';
+  if (!p) { document.getElementById('vista-stock').textContent = '📦 Inicio: —  Final: —'; return; }
+  var antes = stockDe(p);
+  var despues = antes;
+  if (isFinite(cantidad) && cantidad > 0) {
+    if (tipoActual === 'Entrada') { despues = antes + cantidad; }
+    if (tipoActual === 'Venta' || tipoActual === 'Salida' || tipoActual === 'Transferencia') { despues = antes - cantidad; }
+  }
+  document.getElementById('vista-stock').textContent = '📦 Inicio: ' + formatearCantidad(antes) + ' ' + p.unidad + '  →  Final: ' + formatearCantidad(despues) + ' ' + p.unidad;
+}
+function limpiarMovimiento() {
+  document.getElementById('sugerencias-producto').innerHTML = '';
+  document.getElementById('m-cantidad').value = '';
+  document.getElementById('m-origen').value = '';
+  document.getElementById('m-destino').value = '';
+  document.getElementById('m-observaciones').value = '';
+  document.getElementById('m-entrega').value = '';
+  document.getElementById('m-recibe').value = '';
+  document.getElementById('m-fecha').value = ahoraLocal();
+  quitarFotoMovimiento();
+  limpiarMensaje('mensaje-movimiento');
+  actualizarMovimiento();
+}
+function guardarMovimiento(e) {
+  e.preventDefault();
+  var p = productoPorId(document.getElementById('m-producto').value);
+  if (!p) {
+    p = productoEscritoExacto();
+    if (p) { document.getElementById('m-producto').value = p.id; }
+  }
+  if (!p) { mostrarMensaje('mensaje-movimiento', 'Elige un producto.', 'error'); return; }
+  var cantidad = Number(document.getElementById('m-cantidad').value);
+  var fecha = document.getElementById('m-fecha').value;
+  var origen = document.getElementById('m-origen').value.trim();
+  var destino = document.getElementById('m-destino').value.trim();
+  var observaciones = document.getElementById('m-observaciones').value.trim();
+  var entrega = document.getElementById('m-entrega').value.trim();
+  var recibe = document.getElementById('m-recibe').value.trim();
+  var antes = stockDe(p);
+  var error = validarMovimiento({ tipo: tipoActual, cantidad: cantidad, stockActual: antes, origen: origen, observaciones: observaciones, tieneFoto: !!fotoMovimientoActual });
+  if (error) { mostrarMensaje('mensaje-movimiento', error, 'error'); return; }
+  if (!fecha) { mostrarMensaje('mensaje-movimiento', 'Elige la fecha y hora.', 'error'); return; }
+  var despues = antes;
+  if (tipoActual === 'Entrada') { despues = antes + cantidad; }
+  if (tipoActual === 'Venta' || tipoActual === 'Salida' || tipoActual === 'Transferencia') { despues = antes - cantidad; }
+  var folioNum = siguienteFolio(movimientos);
+  var mov = {
+    id: nuevoId(), folioNum: folioNum, folio: formatearFolio(folioNum), tipo: tipoActual,
+    productoId: p.id, codigo: p.codigo, nombre: p.nombre, unidad: p.unidad,
+    cantidad: cantidad, antes: antes, despues: despues,
+    fecha: new Date(fecha).toISOString(), origen: origen, destino: destino,
+    observaciones: observaciones, entrega: entrega, recibe: recibe,
+    creadoEn: new Date().toISOString()
+  };
+  guardarEn('movimientos', mov).then(function () {
+    if (!fotoMovimientoActual) { return null; }
+    return guardarEn('fotos', { movimientoId: mov.id, datos: fotoMovimientoActual, creadoEn: new Date().toISOString() });
+  }).then(function () { return cargarDatos(); }).then(function () {
+    limpiarMovimiento();
+    mostrarMensaje('mensaje-movimiento', 'Movimiento guardado. Folio ' + mov.folio + '. Stock de ' + p.nombre + ': ' + formatearCantidad(despues) + ' ' + p.unidad + '.', 'ok');
+    renderProductos();
+  }).catch(function (err) { mostrarMensaje('mensaje-movimiento', 'No se pudo guardar. ' + (err && err.message ? err.message : ''), 'error'); });
+}
+
+function verMovimientosProducto(id) {
+  var p = productoPorId(id);
+  if (!p) { return; }
+  filtroProductoId = id;
+  mostrarTab('historial');
+  renderHistorial();
+}
+function limpiarFiltroProducto() {
+  filtroProductoId = null;
+  renderHistorial();
+}
+function renderHistorial() {
+  var q = normalizarTexto(document.getElementById('buscar-historial').value);
+  var tipo = document.getElementById('filtro-tipo').value;
+  var fechaFiltro = document.getElementById('filtro-fecha').value;
+  var avisoProducto = document.getElementById('filtro-producto-activo');
+  var productoFiltrado = filtroProductoId ? productoPorId(filtroProductoId) : null;
+  if (productoFiltrado) {
+    avisoProducto.innerHTML = '<div class="meta">Mostrando solo los movimientos de: <strong>' + escaparHtml(productoFiltrado.nombre) + ' (' + escaparHtml(productoFiltrado.codigo) + ')</strong></div><button class="boton secundario" type="button" onclick="limpiarFiltroProducto()">Quitar filtro de producto</button>';
+  } else {
+    avisoProducto.innerHTML = '';
+  }
+  var lista = movimientos.slice().sort(function (a, b) { return b.folioNum - a.folioNum; });
+  var conteo = { Entrada: 0, Venta: 0, Salida: 0, Transferencia: 0 };
+  for (var i = 0; i < movimientos.length; i++) { conteo[movimientos[i].tipo]++; }
+  var maxConteo = Math.max(1, conteo.Entrada, conteo.Venta, conteo.Salida, conteo.Transferencia);
+  function filaConteo(etiqueta, cantidad, clase) {
+    var ancho = cantidad > 0 ? Math.max(2, Math.round(cantidad / maxConteo * 100)) : 0;
+    return '<div class="fila-grafico"><div class="grafico-etiqueta"><span>' + etiqueta + '</span><strong>' + cantidad + '</strong></div>'
+      + '<div class="barra-fondo"><div class="barra ' + clase + '" style="width:' + ancho + '%"></div></div></div>';
+  }
+  document.getElementById('resumen-historial').innerHTML =
+    '<h2 style="margin:0 0 6px 0; font-size:18px;">Movimientos: <strong>' + movimientos.length + '</strong></h2>'
+    + filaConteo('Entradas', conteo.Entrada, '')
+    + filaConteo('Ventas', conteo.Venta, 'venta')
+    + filaConteo('Salidas', conteo.Salida, 'salida')
+    + filaConteo('Transferencias', conteo.Transferencia, 'transferencia');
+  var filtrados = lista.filter(function (m) {
+    if (filtroProductoId && m.productoId !== filtroProductoId) { return false; }
+    if (tipo && m.tipo !== tipo) { return false; }
+    if (fechaFiltro) {
+      var d = new Date(m.fecha);
+      var iso = d.getFullYear() + '-' + (d.getMonth() + 1 < 10 ? '0' : '') + (d.getMonth() + 1) + '-' + (d.getDate() < 10 ? '0' : '') + d.getDate();
+      if (iso !== fechaFiltro) { return false; }
+    }
+    if (!q) { return true; }
+    var texto = normalizarTexto([m.nombre, m.codigo, m.folio, m.observaciones, m.entrega, m.recibe, m.origen, m.destino].join(' '));
+    return texto.indexOf(q) !== -1;
+  });
+  var cont = document.getElementById('lista-historial');
+  if (!filtrados.length) {
+    cont.innerHTML = '<div class="vacio">🔍 No hay movimientos con esos filtros.</div>';
+    return;
+  }
+  var html = '';
+  for (var j = 0; j < filtrados.length; j++) {
+    var m = filtrados[j];
+    html += '<div class="movimiento" data-tipo="' + escaparHtml(m.tipo) + '"><div><span class="etiqueta etiqueta-' + escaparHtml(m.tipo) + '">' + escaparHtml(m.tipo) + '</span> <span class="folio">Folio ' + escaparHtml(m.folio) + '</span></div>'
+      + '<div class="detalle"><strong>' + escaparHtml(m.nombre) + '</strong> (' + escaparHtml(m.codigo) + ')</div>'
+      + '<div class="detalle">' + formatearCantidad(m.cantidad) + ' ' + escaparHtml(m.unidad) + ' &nbsp; Inicio: ' + formatearCantidad(m.antes) + ' &nbsp; Final: ' + formatearCantidad(m.despues) + '</div>'
+      + '<div class="meta">' + formatearFecha(m.fecha) + '</div>';
+    if (m.origen) { html += '<div class="detalle">Origen: ' + escaparHtml(m.origen) + '</div>'; }
+    if (m.destino) { html += '<div class="detalle">Destino: ' + escaparHtml(m.destino) + '</div>'; }
+    if (m.observaciones) { html += '<div class="detalle">Observaciones: ' + escaparHtml(m.observaciones) + '</div>'; }
+    if (m.entrega) { html += '<div class="detalle">Entrega: ' + escaparHtml(m.entrega) + '</div>'; }
+    if (m.recibe) { html += '<div class="detalle">Recibe: ' + escaparHtml(m.recibe) + '</div>'; }
+    if (m.esInicial) { html += '<div class="meta">Stock inicial al crear el producto.</div>'; }
+    if (m.tipo === 'Salida') { html += '<div class="meta">Sin foto de factura.</div>'; }
+    else if (fotoIds[m.id]) { html += '<div class="acciones"><button type="button" onclick="verFoto(\'' + m.id + '\', this)">Ver foto de la factura</button></div><div id="foto-' + m.id + '" data-abierta="no"></div>'; }
+    else { html += '<div class="meta">Sin foto guardada.</div>'; }
+    html += '<div class="acciones"><button type="button" class="principal" onclick="descargarTicket(\'' + m.id + '\', this)">Ticket PDF</button><button type="button" onclick="compartirTicket(\'' + m.id + '\', this)">Compartir por WhatsApp</button></div>';
+    html += '</div>';
+  }
+  cont.innerHTML = html;
+}
+function limpiarFiltros() {
+  document.getElementById('buscar-historial').value = '';
+  document.getElementById('filtro-tipo').value = '';
+  document.getElementById('filtro-fecha').value = '';
+  filtroProductoId = null;
+  renderHistorial();
+}
+function cargarDatos() {
+  return Promise.all([leerTodos('productos'), leerTodos('movimientos'), leerClaves('fotos')]).then(function (res) {
+    productos = res[0] || [];
+    movimientos = res[1] || [];
+    fotoIds = {};
+    var claves = res[2] || [];
+    for (var i = 0; i < claves.length; i++) { fotoIds[claves[i]] = true; }
+    var sel = document.getElementById('m-producto');
+    var actual = sel.value;
+    if (actual && productoPorId(actual)) { sel.value = actual; }
+  });
+}
+function init() {
+  document.getElementById('producto-form').addEventListener('submit', guardarProducto);
+  document.getElementById('movimiento-form').addEventListener('submit', guardarMovimiento);
+  document.getElementById('m-cantidad').addEventListener('input', actualizarMovimiento);
+  document.getElementById('m-foto').addEventListener('change', alElegirFotoMovimiento);
+  document.getElementById('p-foto').addEventListener('change', alElegirFotoInicial);
+  document.getElementById('p-stock').addEventListener('input', actualizarFotoInicialSegunStock);
+  document.getElementById('m-fecha').value = ahoraLocal();
+  elegirTipo('Entrada');
+  cargarDatos().then(function () { renderProductos(); renderHistorial(); actualizarMovimiento(); }).catch(function () {
+    document.getElementById('lista-productos').innerHTML = '<div class="vacio">No se pudo abrir la base de datos de este teléfono. Prueba en Chrome.</div>';
+  });
+}
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+}
+(function () {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) { return; }
+  function registrar() { navigator.serviceWorker.register('sw.js').catch(function () {}); }
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('load', registrar);
+  } else {
+    registrar();
+  }
+})();
+</script>
+</body>
+</html>

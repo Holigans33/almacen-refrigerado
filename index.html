@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Almacén refrigerado — Parte 4 v6 limpia v3</title>
+<title>Almacén refrigerado — Parte 5 (jornada)</title>
 <style>
 /* ── Reset y base ─────────────────────────────────────────────── */
 * { box-sizing: border-box; }
@@ -336,6 +336,7 @@ input[type="search"] { background-image: none; }
 <button type="button" id="tab-movimiento" onclick="mostrarTab('movimiento')">🔄 Movimiento</button>
 <button type="button" id="tab-historial" onclick="mostrarTab('historial')">📜 Historial</button>
 <button type="button" id="tab-respaldo" onclick="mostrarTab('respaldo')">💾 Respaldo</button>
+<button type="button" id="tab-jornada" onclick="mostrarTab('jornada')">🕐 Jornada</button>
 </nav>
 
 <section id="seccion-productos" class="seccion visible" aria-label="Productos">
@@ -467,6 +468,44 @@ input[type="search"] { background-image: none; }
 <div class="resumen" id="resumen-historial"></div>
 <div id="mensaje-ticket" class="mensaje" role="status"></div>
 <div id="lista-historial"></div>
+</section>
+
+<section id="seccion-jornada" class="seccion" aria-label="Jornada">
+<div class="tarjeta">
+<h2>Jornada</h2>
+<p class="ayuda">Marca el inicio al empezar y la salida al terminar. La hora la pone el teléfono al tocar el botón.</p>
+<div class="tipos">
+<button type="button" onclick="prepararJornada('Inicio')">🕐 Registrar inicio</button>
+<button type="button" onclick="prepararJornada('Salida')">🌙 Registrar salida</button>
+</div>
+<div id="jornada-form" class="oculto">
+<label for="j-foto">Foto del ticket</label>
+<input id="j-foto" type="file" accept="image/*">
+<div><img id="vista-j-foto" class="foto-grande oculto" alt="Foto del ticket"></div>
+<div id="info-j-foto" class="meta"></div>
+<label for="j-observaciones">Observaciones (opcional)</label>
+<textarea id="j-observaciones" placeholder="Si quieres poner alguna observación"></textarea>
+<div id="vista-j-hora" class="meta"></div>
+<button class="boton" type="button" id="btn-guardar-jornada" onclick="guardarJornada()">Guardar</button>
+<button class="boton secundario" type="button" onclick="cancelarJornada()">Cancelar</button>
+</div>
+<div id="mensaje-jornada" class="mensaje" role="alert"></div>
+</div>
+<div class="tarjeta">
+<h2>Historial de jornada</h2>
+<label for="buscar-jornada">Buscar</label>
+<input id="buscar-jornada" type="search" placeholder="Observaciones" oninput="renderJornada()">
+<label for="filtro-j-tipo">Tipo</label>
+<select id="filtro-j-tipo" onchange="renderJornada()">
+<option value="">Todos</option>
+<option value="Inicio">Inicio</option>
+<option value="Salida">Salida</option>
+</select>
+<label for="filtro-j-fecha">Fecha</label>
+<input id="filtro-j-fecha" type="date" onchange="renderJornada()">
+<button class="boton secundario" type="button" onclick="limpiarFiltrosJornada()">Limpiar filtros</button>
+</div>
+<div id="lista-jornada"></div>
 </section>
 
 <section id="seccion-respaldo" class="seccion" aria-label="Respaldo">
@@ -677,6 +716,17 @@ function validarRespaldo(d) {
   for (var k = 0; k < d.fotos.length; k++) {
     var f = d.fotos[k];
     if (!f || typeof f.movimientoId !== 'string' || typeof f.datos !== 'string' || f.datos.indexOf('data:image/') !== 0) { return 'Una foto del respaldo está incompleta.'; }
+  }
+  var jr = d.jornada || [];
+  var fj = d.fotosJornada || [];
+  if (!Array.isArray(jr) || !Array.isArray(fj)) { return 'El respaldo trae una jornada incompleta.'; }
+  for (var n = 0; n < jr.length; n++) {
+    var r = jr[n];
+    if (!r || typeof r.id !== 'string' || (r.tipo !== 'Inicio' && r.tipo !== 'Salida') || isNaN(new Date(r.fecha).getTime())) { return 'Un registro de jornada del respaldo está incompleto.'; }
+  }
+  for (var q = 0; q < fj.length; q++) {
+    var g = fj[q];
+    if (!g || typeof g.jornadaId !== 'string' || typeof g.datos !== 'string' || g.datos.indexOf('data:image/') !== 0) { return 'Una foto de jornada del respaldo está incompleta.'; }
   }
   return null;
 }
@@ -922,6 +972,11 @@ if (typeof module !== 'undefined' && module.exports) { module.exports = LOGICA; 
 var productos = [];
 var movimientos = [];
 var fotoIds = {};
+var jornada = [];
+var fotoJornadaIds = {};
+var fotosJornadaCache = {};
+var fotoJornadaActual = null;
+var jornadaTipoPendiente = null;
 var fotosCache = {};
 var fotoMovimientoActual = null;
 var fotoInicialActual = null;
@@ -932,7 +987,7 @@ var dbNombre = 'almacen-refrigerado-v3';
 
 function abrirDB() {
   return new Promise(function (resolve, reject) {
-    var req = indexedDB.open(dbNombre, 2);
+    var req = indexedDB.open(dbNombre, 3);
     req.onupgradeneeded = function () {
       var db = req.result;
       if (!db.objectStoreNames.contains('productos')) {
@@ -944,6 +999,12 @@ function abrirDB() {
       }
       if (!db.objectStoreNames.contains('fotos')) {
         db.createObjectStore('fotos', { keyPath: 'movimientoId' });
+      }
+      if (!db.objectStoreNames.contains('jornada')) {
+        db.createObjectStore('jornada', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('fotosJornada')) {
+        db.createObjectStore('fotosJornada', { keyPath: 'jornadaId' });
       }
     };
     req.onsuccess = function () { resolve(req.result); };
@@ -1131,6 +1192,158 @@ function verFoto(movimientoId, boton) {
     mostrar(foto.datos);
   }).catch(function () { boton.textContent = 'Ver foto de la factura'; boton.disabled = false; });
 }
+function fechaLocalISO(iso) {
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) { return ''; }
+  function p(n) { return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+function jornadaDeHoy(tipo) {
+  var hoy = fechaLocalISO(new Date().toISOString());
+  for (var i = 0; i < jornada.length; i++) {
+    if (jornada[i].tipo === tipo && fechaLocalISO(jornada[i].fecha) === hoy) { return jornada[i]; }
+  }
+  return null;
+}
+function horasEntre(inicioISO, salidaISO) {
+  var ms = new Date(salidaISO) - new Date(inicioISO);
+  if (!isFinite(ms) || ms < 0) { return ''; }
+  var min = Math.round(ms / 60000);
+  var h = Math.floor(min / 60);
+  var m = min % 60;
+  return h + ' h ' + (m < 10 ? '0' : '') + m + ' min';
+}
+function prepararJornada(tipo) {
+  limpiarMensaje('mensaje-jornada');
+  if (tipo === 'Inicio' && jornadaDeHoy('Inicio')) { mostrarMensaje('mensaje-jornada', 'Hoy ya hay un inicio registrado.', 'error'); return; }
+  if (tipo === 'Salida' && !jornadaDeHoy('Inicio')) { mostrarMensaje('mensaje-jornada', 'Primero registra el inicio de hoy.', 'error'); return; }
+  if (tipo === 'Salida' && jornadaDeHoy('Salida')) { mostrarMensaje('mensaje-jornada', 'Hoy ya hay una salida registrada.', 'error'); return; }
+  jornadaTipoPendiente = tipo;
+  document.getElementById('jornada-form').classList.remove('oculto');
+  document.getElementById('btn-guardar-jornada').textContent = 'Guardar ' + (tipo === 'Inicio' ? 'inicio' : 'salida');
+  document.getElementById('vista-j-hora').textContent = 'Se guardará con la hora: ' + formatearFecha(new Date().toISOString());
+}
+function cancelarJornada() {
+  jornadaTipoPendiente = null;
+  quitarFotoJornada();
+  document.getElementById('j-observaciones').value = '';
+  document.getElementById('jornada-form').classList.add('oculto');
+  limpiarMensaje('mensaje-jornada');
+}
+function quitarFotoJornada() {
+  fotoJornadaActual = null;
+  document.getElementById('j-foto').value = '';
+  document.getElementById('vista-j-foto').classList.add('oculto');
+  document.getElementById('vista-j-foto').removeAttribute('src');
+  document.getElementById('info-j-foto').textContent = '';
+}
+function alElegirFotoJornada() {
+  var input = document.getElementById('j-foto');
+  var archivo = input.files && input.files[0];
+  if (!archivo) { quitarFotoJornada(); return; }
+  document.getElementById('info-j-foto').textContent = 'Procesando la foto...';
+  comprimirImagen(archivo).then(function (datos) {
+    fotoJornadaActual = datos;
+    var vista = document.getElementById('vista-j-foto');
+    vista.src = datos;
+    vista.classList.remove('oculto');
+    document.getElementById('info-j-foto').textContent = 'Foto lista.';
+  }).catch(function () {
+    quitarFotoJornada();
+    mostrarMensaje('mensaje-jornada', 'No se pudo leer esa imagen. Elige otra foto.', 'error');
+  });
+}
+function guardarJornada() {
+  if (!jornadaTipoPendiente) { mostrarMensaje('mensaje-jornada', 'Elige primero Registrar inicio o Registrar salida.', 'error'); return; }
+  var tipo = jornadaTipoPendiente;
+  if (!fotoJornadaActual) { mostrarMensaje('mensaje-jornada', 'Falta la foto del ticket.', 'error'); return; }
+  if (tipo === 'Inicio' && jornadaDeHoy('Inicio')) { mostrarMensaje('mensaje-jornada', 'Hoy ya hay un inicio registrado.', 'error'); return; }
+  if (tipo === 'Salida' && !jornadaDeHoy('Inicio')) { mostrarMensaje('mensaje-jornada', 'Primero registra el inicio de hoy.', 'error'); return; }
+  if (tipo === 'Salida' && jornadaDeHoy('Salida')) { mostrarMensaje('mensaje-jornada', 'Hoy ya hay una salida registrada.', 'error'); return; }
+  var observaciones = document.getElementById('j-observaciones').value.trim();
+  var reg = { id: nuevoId(), tipo: tipo, fecha: new Date().toISOString(), observaciones: observaciones, creadoEn: new Date().toISOString() };
+  guardarEn('jornada', reg).then(function () {
+    return guardarEn('fotosJornada', { jornadaId: reg.id, datos: fotoJornadaActual, creadoEn: new Date().toISOString() });
+  }).then(function () { return cargarDatos(); }).then(function () {
+    cancelarJornada();
+    mostrarMensaje('mensaje-jornada', (tipo === 'Inicio' ? 'Inicio' : 'Salida') + ' registrado a las ' + formatearFecha(reg.fecha) + '.', 'ok');
+    renderJornada();
+  }).catch(function (err) { mostrarMensaje('mensaje-jornada', 'No se pudo guardar. ' + (err && err.message ? err.message : ''), 'error'); });
+}
+function renderJornada() {
+  var q = normalizarTexto(document.getElementById('buscar-jornada').value);
+  var tipo = document.getElementById('filtro-j-tipo').value;
+  var fechaFiltro = document.getElementById('filtro-j-fecha').value;
+  var lista = jornada.slice().sort(function (a, b) { return new Date(b.fecha) - new Date(a.fecha); });
+  var filtrados = lista.filter(function (r) {
+    if (tipo && r.tipo !== tipo) { return false; }
+    if (fechaFiltro && fechaLocalISO(r.fecha) !== fechaFiltro) { return false; }
+    if (!q) { return true; }
+    return normalizarTexto(r.observaciones || '').indexOf(q) !== -1;
+  });
+  var cont = document.getElementById('lista-jornada');
+  if (!filtrados.length) { cont.innerHTML = '<div class="vacio">No hay registros de jornada con esos filtros.</div>'; return; }
+  var html = '';
+  for (var i = 0; i < filtrados.length; i++) {
+    var r = filtrados[i];
+    var duracion = '';
+    if (r.tipo === 'Salida') {
+      var ini = null;
+      for (var j = 0; j < jornada.length; j++) {
+        if (jornada[j].tipo === 'Inicio' && fechaLocalISO(jornada[j].fecha) === fechaLocalISO(r.fecha)) { ini = jornada[j]; break; }
+      }
+      if (ini) { duracion = '<div class="meta">Jornada: ' + horasEntre(ini.fecha, r.fecha) + '</div>'; }
+    }
+    html += '<div class="movimiento"><div><span class="etiqueta">' + escaparHtml(r.tipo) + '</span></div>'
+      + '<div class="detalle">' + formatearFecha(r.fecha) + '</div>'
+      + (r.observaciones ? '<div class="detalle">' + escaparHtml(r.observaciones) + '</div>' : '')
+      + duracion
+      + '<div class="acciones"><button type="button" onclick="verFotoJornada(\'' + r.id + '\', this)">Ver foto del ticket</button></div>'
+      + '<div id="fotoj-' + r.id + '"></div></div>';
+  }
+  cont.innerHTML = html;
+}
+function verFotoJornada(id, boton) {
+  var cont = document.getElementById('fotoj-' + id);
+  if (!cont) { return; }
+  if (cont.dataset.abierta === 'si') {
+    cont.innerHTML = '';
+    cont.dataset.abierta = 'no';
+    boton.textContent = 'Ver foto del ticket';
+    return;
+  }
+  boton.textContent = 'Cargando foto...';
+  boton.disabled = true;
+  var mostrar = function (datos) {
+    cont.innerHTML = '';
+    var img = document.createElement('img');
+    img.className = 'foto-grande';
+    img.alt = 'Foto del ticket';
+    img.src = datos;
+    cont.appendChild(img);
+    var enlace = document.createElement('a');
+    enlace.href = datos;
+    enlace.target = '_blank';
+    enlace.rel = 'noopener';
+    enlace.textContent = 'Abrir foto en tamaño completo';
+    cont.appendChild(enlace);
+    cont.dataset.abierta = 'si';
+    boton.textContent = 'Ocultar foto';
+    boton.disabled = false;
+  };
+  if (fotosJornadaCache[id]) { mostrar(fotosJornadaCache[id]); return; }
+  leerUno('fotosJornada', id).then(function (foto) {
+    if (!foto || !foto.datos) { boton.textContent = 'Sin foto guardada'; boton.disabled = false; return; }
+    fotosJornadaCache[id] = foto.datos;
+    mostrar(foto.datos);
+  }).catch(function () { boton.textContent = 'Ver foto del ticket'; boton.disabled = false; });
+}
+function limpiarFiltrosJornada() {
+  document.getElementById('buscar-jornada').value = '';
+  document.getElementById('filtro-j-tipo').value = '';
+  document.getElementById('filtro-j-fecha').value = '';
+  renderJornada();
+}
 function datosURLABytes(datosURL) {
   var base = String(datosURL || '').split(',')[1] || '';
   var bin = atob(base);
@@ -1218,11 +1431,11 @@ function compartirTicket(id, boton) {
 function renderRespaldo() {
   var info = document.getElementById('info-respaldo');
   var nFotos = Object.keys(fotoIds || {}).length;
-  info.textContent = productos.length + ' productos, ' + movimientos.length + ' movimientos y ' + nFotos + ' fotos guardadas.';
+  info.textContent = productos.length + ' productos, ' + movimientos.length + ' movimientos, ' + nFotos + ' fotos guardadas y ' + jornada.length + ' registros de jornada.';
   leerTodos('fotos').then(function (lista) {
     var totalBytes = 0;
     for (var i = 0; i < lista.length; i++) { totalBytes += (lista[i].datos || '').length; }
-    info.textContent = productos.length + ' productos, ' + movimientos.length + ' movimientos y ' + lista.length + ' fotos guardadas. Tamaño aproximado de las fotos: ' + Math.round(totalBytes / 1024) + ' KB.';
+    info.textContent = productos.length + ' productos, ' + movimientos.length + ' movimientos, ' + lista.length + ' fotos guardadas y ' + jornada.length + ' registros de jornada. Tamaño aproximado de las fotos: ' + Math.round(totalBytes / 1024) + ' KB.';
   }).catch(function () {});
 }
 function nombreArchivoRespaldo(fecha) {
@@ -1234,11 +1447,14 @@ function exportarRespaldo() {
   mensaje.textContent = 'Preparando el respaldo…'; mensaje.className = 'mensaje';
   leerTodos('fotos').then(function (fotosLista) {
     var fotos = fotosLista.map(function (f) { return { movimientoId: f.movimientoId, datos: f.datos }; });
-    var respaldo = { app: 'Almacén refrigerado', version: 1, exportadoEn: new Date().toISOString(), productos: productos, movimientos: movimientos, fotos: fotos };
-    var texto = JSON.stringify(respaldo);
-    descargarArchivo(new Blob([texto], { type: 'application/json' }), nombreArchivoRespaldo(new Date()));
-    mensaje.textContent = 'Respaldo exportado: ' + productos.length + ' productos, ' + movimientos.length + ' movimientos y ' + fotos.length + ' fotos.';
-    mensaje.className = 'mensaje ok';
+    return leerTodos('fotosJornada').then(function (fotosJLista) {
+      var fotosJornada = fotosJLista.map(function (f) { return { jornadaId: f.jornadaId, datos: f.datos }; });
+      var respaldo = { app: 'Almacén refrigerado', version: 2, exportadoEn: new Date().toISOString(), productos: productos, movimientos: movimientos, fotos: fotos, jornada: jornada, fotosJornada: fotosJornada };
+      var texto = JSON.stringify(respaldo);
+      descargarArchivo(new Blob([texto], { type: 'application/json' }), nombreArchivoRespaldo(new Date()));
+      mensaje.textContent = 'Respaldo exportado: ' + productos.length + ' productos, ' + movimientos.length + ' movimientos, ' + fotos.length + ' fotos y ' + jornada.length + ' registros de jornada.';
+      mensaje.className = 'mensaje ok';
+    });
   }).catch(function () {
     mensaje.textContent = 'No se pudo leer las fotos para el respaldo. Inténtalo de nuevo.';
     mensaje.className = 'mensaje error';
@@ -1247,7 +1463,7 @@ function exportarRespaldo() {
 function reemplazarTodo(datos) {
   return abrirDB().then(function (db) {
     return new Promise(function (resolve, reject) {
-      var t = db.transaction(['productos', 'movimientos', 'fotos'], 'readwrite');
+      var t = db.transaction(['productos', 'movimientos', 'fotos', 'jornada', 'fotosJornada'], 'readwrite');
       var p = t.objectStore('productos');
       p.clear();
       for (var i = 0; i < datos.productos.length; i++) { p.put(datos.productos[i]); }
@@ -1257,6 +1473,14 @@ function reemplazarTodo(datos) {
       var f = t.objectStore('fotos');
       f.clear();
       for (var k = 0; k < datos.fotos.length; k++) { f.put(datos.fotos[k]); }
+      var jr = t.objectStore('jornada');
+      jr.clear();
+      var listaJornada = datos.jornada || [];
+      for (var n = 0; n < listaJornada.length; n++) { jr.put(listaJornada[n]); }
+      var fj = t.objectStore('fotosJornada');
+      fj.clear();
+      var listaFotosJornada = datos.fotosJornada || [];
+      for (var q = 0; q < listaFotosJornada.length; q++) { fj.put(listaFotosJornada[q]); }
       t.oncomplete = function () { resolve(); };
       t.onerror = function () { reject(t.error || new Error('No se pudo importar el respaldo.')); };
       t.onabort = function () { reject(t.error || new Error('La importación se canceló.')); };
@@ -1290,13 +1514,13 @@ async function importarRespaldo() {
     mensaje.className = 'mensaje error';
     return;
   }
-  if (!confirm('Importar reemplaza todos los productos, movimientos y fotos de este teléfono por los del respaldo. ¿Seguro que quieres seguir?')) { return; }
+  if (!confirm('Importar reemplaza todos los productos, movimientos, fotos y jornada de este teléfono por los del respaldo. ¿Seguro que quieres seguir?')) { return; }
   try {
     await reemplazarTodo(datos);
     await cargarDatos();
-    renderProductos(); renderHistorial(); renderRespaldo();
+    renderProductos(); renderHistorial(); renderJornada(); renderRespaldo();
     input.value = '';
-    mensaje.textContent = 'Respaldo importado: ' + datos.productos.length + ' productos, ' + datos.movimientos.length + ' movimientos y ' + datos.fotos.length + ' fotos.';
+    mensaje.textContent = 'Respaldo importado: ' + datos.productos.length + ' productos, ' + datos.movimientos.length + ' movimientos, ' + datos.fotos.length + ' fotos y ' + (datos.jornada || []).length + ' registros de jornada.';
     mensaje.className = 'mensaje ok';
   } catch (e) {
     mensaje.textContent = 'No se pudo importar el respaldo' + (e && e.name ? ' (' + e.name + ')' : '') + '. No se cambió ningún dato. Inténtalo de nuevo con el mismo archivo.';
@@ -1376,13 +1600,14 @@ function copiarResumen() {
   }
 }
 function mostrarTab(nombre) {
-  var secciones = ['productos', 'movimiento', 'historial', 'respaldo'];
+  var secciones = ['productos', 'movimiento', 'historial', 'jornada', 'respaldo'];
   for (var i = 0; i < secciones.length; i++) {
     document.getElementById('seccion-' + secciones[i]).classList.toggle('visible', secciones[i] === nombre);
     document.getElementById('tab-' + secciones[i]).classList.toggle('activa', secciones[i] === nombre);
   }
   if (nombre === 'historial') { renderHistorial(); }
   if (nombre === 'productos') { renderProductos(); }
+  if (nombre === 'jornada') { renderJornada(); }
   if (nombre === 'respaldo') { renderRespaldo(); }
 }
 function mostrarMensaje(id, texto, tipo) {
@@ -1766,12 +1991,16 @@ function limpiarFiltros() {
   renderHistorial();
 }
 function cargarDatos() {
-  return Promise.all([leerTodos('productos'), leerTodos('movimientos'), leerClaves('fotos')]).then(function (res) {
+  return Promise.all([leerTodos('productos'), leerTodos('movimientos'), leerClaves('fotos'), leerTodos('jornada'), leerClaves('fotosJornada')]).then(function (res) {
     productos = res[0] || [];
     movimientos = res[1] || [];
     fotoIds = {};
     var claves = res[2] || [];
     for (var i = 0; i < claves.length; i++) { fotoIds[claves[i]] = true; }
+    jornada = res[3] || [];
+    fotoJornadaIds = {};
+    var clavesJ = res[4] || [];
+    for (var j = 0; j < clavesJ.length; j++) { fotoJornadaIds[clavesJ[j]] = true; }
     var sel = document.getElementById('m-producto');
     var actual = sel.value;
     if (actual && productoPorId(actual)) { sel.value = actual; }
@@ -1782,6 +2011,7 @@ function init() {
   document.getElementById('movimiento-form').addEventListener('submit', guardarMovimiento);
   document.getElementById('m-cantidad').addEventListener('input', actualizarMovimiento);
   document.getElementById('m-foto').addEventListener('change', alElegirFotoMovimiento);
+  document.getElementById('j-foto').addEventListener('change', alElegirFotoJornada);
   document.getElementById('p-foto').addEventListener('change', alElegirFotoInicial);
   document.getElementById('p-stock').addEventListener('input', actualizarFotoInicialSegunStock);
   document.getElementById('m-fecha').value = ahoraLocal();

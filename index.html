@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Almacén refrigerado — Parte 5 v2</title>
+<title>Almacén refrigerado — Parte 6 (por día)</title>
 <style>
 /* ── Reset y base ─────────────────────────────────────────────── */
 * { box-sizing: border-box; }
@@ -464,6 +464,10 @@ input[type="search"] { background-image: none; }
 <label for="filtro-fecha">Fecha</label>
 <input id="filtro-fecha" type="date" onchange="renderHistorial()">
 <button class="boton secundario" type="button" onclick="limpiarFiltros()">Limpiar filtros</button>
+</div>
+<div class="tipos">
+<button type="button" id="vista-movimientos" class="activo" onclick="cambiarVistaHistorial('movimientos')">📜 Movimientos</button>
+<button type="button" id="vista-dia" onclick="cambiarVistaHistorial('dia')">📅 Por día</button>
 </div>
 <div class="resumen" id="resumen-historial"></div>
 <div id="mensaje-ticket" class="mensaje" role="status"></div>
@@ -982,6 +986,7 @@ var fotoMovimientoActual = null;
 var fotoInicialActual = null;
 var tipoActual = 'Entrada';
 var filtroProductoId = null;
+var vistaHistorial = 'movimientos';
 var editandoId = null;
 var dbNombre = 'almacen-refrigerado-v3';
 
@@ -1667,6 +1672,7 @@ function renderProductos() {
       + '<button type="button" onclick="irAMovimiento(\'' + p.id + '\', \'Salida\')">Salida</button>'
       + '<button type="button" onclick="irAMovimiento(\'' + p.id + '\', \'Transferencia\')">Transferencia</button>'
       + '<button type="button" onclick="verMovimientosProducto(\'' + p.id + '\')">Ver movimientos</button>'
+      + '<button type="button" onclick="verPorDia(\'' + p.id + '\')">Ver por día</button>'
       + '<button type="button" onclick="abrirEditarProducto(\'' + p.id + '\')">Editar</button>'
       + '</div></div>';
   }
@@ -1919,6 +1925,69 @@ function limpiarFiltroProducto() {
   filtroProductoId = null;
   renderHistorial();
 }
+function verPorDia(id) {
+  var p = productoPorId(id);
+  if (!p) { return; }
+  filtroProductoId = id;
+  vistaHistorial = 'dia';
+  mostrarTab('historial');
+  renderHistorial();
+}
+function cambiarVistaHistorial(vista) {
+  vistaHistorial = vista;
+  document.getElementById('vista-movimientos').classList.toggle('activo', vista === 'movimientos');
+  document.getElementById('vista-dia').classList.toggle('activo', vista === 'dia');
+  renderHistorial();
+}
+function irADia(productoId, fechaISO, tipo) {
+  filtroProductoId = productoId;
+  vistaHistorial = 'movimientos';
+  document.getElementById('vista-movimientos').classList.add('activo');
+  document.getElementById('vista-dia').classList.remove('activo');
+  document.getElementById('buscar-historial').value = '';
+  document.getElementById('filtro-tipo').value = tipo;
+  document.getElementById('filtro-fecha').value = fechaISO;
+  renderHistorial();
+}
+function renderPorDia() {
+  var q = normalizarTexto(document.getElementById('buscar-historial').value);
+  var tipo = document.getElementById('filtro-tipo').value;
+  var fechaFiltro = document.getElementById('filtro-fecha').value;
+  var ordenTipo = { Entrada: 0, Venta: 1, Salida: 2, Transferencia: 3 };
+  var grupos = {};
+  for (var i = 0; i < movimientos.length; i++) {
+    var m = movimientos[i];
+    if (filtroProductoId && m.productoId !== filtroProductoId) { continue; }
+    if (tipo && m.tipo !== tipo) { continue; }
+    var fecha = fechaLocalISO(m.fecha);
+    if (fechaFiltro && fecha !== fechaFiltro) { continue; }
+    if (q && normalizarTexto([m.nombre, m.codigo].join(' ')).indexOf(q) === -1) { continue; }
+    var clave = m.productoId + '|' + fecha + '|' + m.tipo;
+    if (!grupos[clave]) { grupos[clave] = { productoId: m.productoId, nombre: m.nombre, codigo: m.codigo, unidad: m.unidad, fecha: fecha, tipo: m.tipo, cantidad: 0, veces: 0 }; }
+    grupos[clave].cantidad += m.cantidad;
+    grupos[clave].veces += 1;
+  }
+  var lista = [];
+  for (var k in grupos) { lista.push(grupos[k]); }
+  lista.sort(function (a, b) {
+    if (a.fecha !== b.fecha) { return a.fecha < b.fecha ? 1 : -1; }
+    if (a.nombre !== b.nombre) { return normalizarTexto(a.nombre) < normalizarTexto(b.nombre) ? -1 : 1; }
+    return ordenTipo[a.tipo] - ordenTipo[b.tipo];
+  });
+  var cont = document.getElementById('lista-historial');
+  if (!lista.length) { cont.innerHTML = '<div class="vacio">🔍 No hay movimientos con esos filtros.</div>'; return; }
+  var html = '';
+  for (var j = 0; j < lista.length; j++) {
+    var g = lista[j];
+    var fechaTexto = g.fecha.split('-').reverse().join('/');
+    html += '<div class="movimiento"><div><span class="etiqueta etiqueta-' + escaparHtml(g.tipo) + '">' + escaparHtml(g.tipo) + '</span></div>'
+      + '<div class="detalle"><strong>' + escaparHtml(g.nombre) + '</strong> (' + escaparHtml(g.codigo) + ')</div>'
+      + '<div class="detalle">' + fechaTexto + ' &nbsp; ' + formatearCantidad(g.cantidad) + ' ' + escaparHtml(g.unidad) + ' &nbsp; ' + g.veces + (g.veces === 1 ? ' movimiento' : ' movimientos') + '</div>'
+      + '<div class="acciones"><button type="button" class="principal" onclick="irADia(\'' + g.productoId + '\', \'' + g.fecha + '\', \'' + g.tipo + '\')">Ver movimientos</button></div>'
+      + '</div>';
+  }
+  cont.innerHTML = html;
+}
 function renderHistorial() {
   var q = normalizarTexto(document.getElementById('buscar-historial').value);
   var tipo = document.getElementById('filtro-tipo').value;
@@ -1929,6 +1998,11 @@ function renderHistorial() {
     avisoProducto.innerHTML = '<div class="meta">Mostrando solo los movimientos de: <strong>' + escaparHtml(productoFiltrado.nombre) + ' (' + escaparHtml(productoFiltrado.codigo) + ')</strong></div><button class="boton secundario" type="button" onclick="limpiarFiltroProducto()">Quitar filtro de producto</button>';
   } else {
     avisoProducto.innerHTML = '';
+  }
+  if (vistaHistorial === 'dia') {
+    document.getElementById('resumen-historial').innerHTML = '';
+    renderPorDia();
+    return;
   }
   var lista = movimientos.slice().sort(function (a, b) { return b.folioNum - a.folioNum; });
   var conteo = { Entrada: 0, Venta: 0, Salida: 0, Transferencia: 0 };

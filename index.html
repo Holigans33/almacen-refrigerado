@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Almacén refrigerado — Parte 6 (por día)</title>
+<title>Almacén refrigerado — Parte 7 (menú)</title>
 <style>
 /* ── Reset y base ─────────────────────────────────────────────── */
 * { box-sizing: border-box; }
@@ -56,33 +56,44 @@ header p { margin: 4px 0 0 0; font-size: 13px; color: #b8d4ea; }
 /* ── Layout ───────────────────────────────────────────────────── */
 main { width: 100%; max-width: 720px; margin: 0 auto; padding: 10px 10px 32px 10px; }
 
-/* ── Pestañas ─────────────────────────────────────────────────── */
-.pestanas {
-  display: flex; gap: 5px; margin: 0 0 10px 0;
-  position: sticky; top: 0;
+/* ── Menú desplegable ────────────────────────────────────────── */
+.menu-contenedor {
+  position: sticky; top: 0; z-index: 5;
   background: #e8edf2;
-  padding: 7px 0 5px 0;
-  z-index: 5;
   border-bottom: 1px solid #d0dae3;
+  margin: 0 0 10px 0;
 }
-.pestanas button {
-  flex: 1; min-width: 0; min-height: 40px;
+.menu-bar { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+#btn-menu {
+  width: 44px; min-height: 44px;
   border: 1.5px solid #163a5c;
-  background: #ffffff;
-  color: #163a5c;
+  background: #ffffff; color: #163a5c;
   border-radius: 10px;
-  font-size: 12px; font-weight: 700;
+  font-size: 22px; font-weight: 700;
   cursor: pointer;
-  padding: 5px 2px;
-  transition: background .15s, color .15s, box-shadow .15s;
-  box-shadow: 0 1px 3px rgba(22,58,92,.08);
 }
-.pestanas button:hover { background: #dce8f4; }
-.pestanas button.activa {
-  background: #163a5c;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(22,58,92,.3);
+#titulo-seccion { font-size: 18px; font-weight: 700; color: #163a5c; }
+.menu-desplegable {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: #ffffff;
+  border: 1.5px solid #163a5c;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(22,58,92,.18);
+  padding: 6px;
 }
+.menu-desplegable button {
+  display: block; width: 100%; min-height: 48px;
+  text-align: left;
+  background: #ffffff; color: #163a5c;
+  border: none; border-bottom: 1px solid #e8edf2;
+  border-radius: 8px;
+  font-size: 16px; font-weight: 700;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.menu-desplegable button:last-child { border-bottom: none; }
+.menu-desplegable button:hover { background: #dce8f4; }
+.menu-desplegable button.activa { background: #163a5c; color: #ffffff; }
 
 /* ── Visibilidad ──────────────────────────────────────────────── */
 .seccion { display: none; }
@@ -317,7 +328,7 @@ button:disabled {
 /* ── Extras visuales ─────────────────────────────────────────── */
 .stock-cero { color: #b3261e; }
 .insignia-agotado { display:inline-block; vertical-align:middle; margin-left:6px; background:#fdf0ef; color:#7a1f1f; border:1px solid #c0392b; border-radius:20px; padding:2px 9px; font-size:12px; font-weight:700; letter-spacing:0; }
-.pestanas button:focus-visible, .boton:focus-visible, .acciones button:focus-visible, .tipos button:focus-visible { outline: 3px solid #f2a900; outline-offset: 2px; }
+.menu-desplegable button:focus-visible, #btn-menu:focus-visible, .boton:focus-visible, .acciones button:focus-visible, .tipos button:focus-visible { outline: 3px solid #f2a900; outline-offset: 2px; }
 header { padding-top: max(16px, env(safe-area-inset-top)); }
 main { padding-bottom: max(32px, env(safe-area-inset-bottom)); }
 input[type="file"] { padding: 10px 12px; background: #f0f5fa; border-style: dashed; }
@@ -331,13 +342,19 @@ input[type="search"] { background-image: none; }
 <p>📴 Sin conexión · Los datos quedan en este teléfono</p>
 </header>
 <main>
-<nav class="pestanas" aria-label="Secciones">
-<button type="button" id="tab-productos" class="activa" onclick="mostrarTab('productos')">📦 Productos</button>
-<button type="button" id="tab-movimiento" onclick="mostrarTab('movimiento')">🔄 Movimiento</button>
-<button type="button" id="tab-historial" onclick="mostrarTab('historial')">📜 Historial</button>
-<button type="button" id="tab-respaldo" onclick="mostrarTab('respaldo')">💾 Respaldo</button>
-<button type="button" id="tab-jornada" onclick="mostrarTab('jornada')">🕐 Jornada</button>
+<div class="menu-contenedor">
+<div class="menu-bar">
+<button type="button" id="btn-menu" aria-label="Menú" aria-expanded="false" onclick="alternarMenu()">☰</button>
+<span id="titulo-seccion">Productos</span>
+</div>
+<nav id="menu-desplegable" class="menu-desplegable oculto" aria-label="Secciones">
+<button type="button" id="tab-productos" class="activa" onclick="irASeccion('productos')">📦 Productos</button>
+<button type="button" id="tab-movimiento" onclick="irASeccion('movimiento')">🔄 Movimiento</button>
+<button type="button" id="tab-historial" onclick="irASeccion('historial')">📜 Historial</button>
+<button type="button" id="tab-respaldo" onclick="irASeccion('respaldo')">💾 Respaldo</button>
+<button type="button" id="tab-jornada" onclick="irASeccion('jornada')">🕐 Jornada</button>
 </nav>
+</div>
 
 <section id="seccion-productos" class="seccion visible" aria-label="Productos">
 <div class="tarjeta">
@@ -1604,12 +1621,27 @@ function copiarResumen() {
     mensaje.className = 'mensaje';
   }
 }
+function alternarMenu() {
+  var menu = document.getElementById('menu-desplegable');
+  var abierto = menu.classList.toggle('oculto') === false;
+  document.getElementById('btn-menu').setAttribute('aria-expanded', abierto ? 'true' : 'false');
+}
+function cerrarMenu() {
+  document.getElementById('menu-desplegable').classList.add('oculto');
+  document.getElementById('btn-menu').setAttribute('aria-expanded', 'false');
+}
+function irASeccion(nombre) {
+  cerrarMenu();
+  mostrarTab(nombre);
+}
 function mostrarTab(nombre) {
   var secciones = ['productos', 'movimiento', 'historial', 'jornada', 'respaldo'];
+  var nombres = { productos: 'Productos', movimiento: 'Movimiento', historial: 'Historial', jornada: 'Jornada', respaldo: 'Respaldo' };
   for (var i = 0; i < secciones.length; i++) {
     document.getElementById('seccion-' + secciones[i]).classList.toggle('visible', secciones[i] === nombre);
     document.getElementById('tab-' + secciones[i]).classList.toggle('activa', secciones[i] === nombre);
   }
+  document.getElementById('titulo-seccion').textContent = nombres[nombre] || nombre;
   if (nombre === 'historial') { renderHistorial(); }
   if (nombre === 'productos') { renderProductos(); }
   if (nombre === 'jornada') { renderJornada(); }
@@ -2089,6 +2121,11 @@ function init() {
   document.getElementById('p-foto').addEventListener('change', alElegirFotoInicial);
   document.getElementById('p-stock').addEventListener('input', actualizarFotoInicialSegunStock);
   document.getElementById('m-fecha').value = ahoraLocal();
+  document.addEventListener('click', function (e) {
+    var cont = null;
+    if (e.target && e.target.closest) { cont = e.target.closest('.menu-contenedor'); }
+    if (!cont) { cerrarMenu(); }
+  });
   elegirTipo('Entrada');
   cargarDatos().then(function () { renderProductos(); renderHistorial(); actualizarMovimiento(); }).catch(function () {
     document.getElementById('lista-productos').innerHTML = '<div class="vacio">No se pudo abrir la base de datos de este teléfono. Prueba en Chrome.</div>';

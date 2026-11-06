@@ -1,4 +1,4 @@
-var CACHE = 'almacen-refrigerado-v7';
+var CACHE = 'almacen-refrigerado-v8';
 var CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));
